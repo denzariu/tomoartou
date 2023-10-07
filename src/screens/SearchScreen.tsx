@@ -1,7 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import { StyleSheet, Text, View, useColorScheme } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
+import { DarkTheme, Theme } from '../defaults/ui';
 
 const SearchScreen = () => {
+  
+  
   return (
     <View>
       <Text>SearchScreen</Text>

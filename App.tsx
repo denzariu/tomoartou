@@ -50,7 +50,11 @@ function App(): JSX.Element {
         <NavigationContainer 
           theme={useColorScheme() === 'dark' ? DarkThemeNav : DefaultThemeNav}
         >
-          <Stack.Navigator>
+          <Stack.Navigator 
+            screenOptions={{
+              headerShown: false
+            }}
+            >
             <Stack.Screen
               name="Tabs"
               component={Tabs}
@@ -67,7 +71,6 @@ function Tabs(): JSX.Element {
   const currentTheme = isDarkMode ? DarkTheme : Theme;
 
   return (
-    // <SafeAreaView>
       <Tab.Navigator
         initialRouteName="Home"
         activeColor={currentTheme.colors.tabActive}
@@ -89,6 +92,7 @@ function Tabs(): JSX.Element {
           component={DiscoverScreen}
           options={{
             tabBarLabel: 'Discover',
+            tabBarBadge: true, //2 for instance
             tabBarIcon: ({ color }) => (
               <MaterialCommunityIcons name="compass" color={color} size={26} />
             ),
@@ -115,7 +119,6 @@ function Tabs(): JSX.Element {
           }}
         />
       </Tab.Navigator>
-    // </SafeAreaView>
   );
 }
 

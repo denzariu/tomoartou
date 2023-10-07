@@ -16,8 +16,8 @@ const palette = {
 
 export const Theme = {
   colors: {
-    black: palette.black,
-    white: palette.white,
+    background: palette.almostWhite,
+    foreground: palette.black,
 
     primary: palette.purple,
     secondary: palette.pink,
@@ -30,6 +30,7 @@ export const Theme = {
   spacing: {
     s: 8,
     m: 16,
+    page: 20,
     l: 24,
     xl: 40,
   },
@@ -60,8 +61,8 @@ export const DarkTheme = {
   colors: {
     ...Theme.colors,
 
-    black: palette.white,
-    white: palette.black,
+    background: palette.black,
+    foreground: palette.almostWhite,
 
     primary: palette.purple,
     secondary: palette.pink,
