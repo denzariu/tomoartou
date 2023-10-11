@@ -26,8 +26,9 @@ const HomeScreen = ({...props}) => {
       .then(response => response.json())
       .then(json => 
         // fetch(json.config.iiif_url + '/' + json.data.image_id + '/full/843,/0/default.jpg')
-        {setImageUrl(json.config.iiif_url + '/' + json.data.image_id + '/full/843,/0/default.jpg')
-        console.log(imageUrl)
+        {
+          setImageUrl(json.config.iiif_url + '/' + json.data.image_id + '/full/843,/0/default.jpg')
+          console.log(imageUrl)
         }
       )
   }, [artworkId])

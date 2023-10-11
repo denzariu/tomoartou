@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { DarkTheme, Theme } from '../defaults/ui';
 import { ScrollView } from 'react-native';
 import { NativeScrollEvent } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 const DiscoverScreen = () => {
 
   const isDarkMode = useColorScheme() === 'dark';
@@ -13,7 +14,7 @@ const DiscoverScreen = () => {
   const [fetching, setFetching] = useState<boolean>(false)
   const [artworks, setArtworks] = useState<any|undefined>([])
   const [imageUrl, setImageUrl] = useState<string|undefined>(undefined)
-  const [currentPage, setCurrentPage] = useState<number>(12)
+  const [currentPage, setCurrentPage] = useState<number>(3)
   const LIMIT: number = 12;
 
   const iiif_url = 'https://www.artic.edu/iiif/2/';
@@ -27,7 +28,7 @@ const DiscoverScreen = () => {
 
     setLoading(true);
     // const url = `https://api.artic.edu/api/v1/artworks?page=${currentPage}&limit=${LIMIT}?fields=image_id,title,thumbnail`
-    const url = `https://api.artic.edu/api/v1/artworks?page=${currentPage}&limit=${LIMIT}`
+    const url = `https://api.artic.edu/api/v1/artworks?page=${currentPage}&limit=${LIMIT}&fields=image_id,title,thumbnail`
 
     return (
       setFetching(true),
@@ -65,7 +66,6 @@ const DiscoverScreen = () => {
   }, [currentPage])
 
   
-  
 
   const styles = StyleSheet.create({
     page: {
@@ -81,6 +81,22 @@ const DiscoverScreen = () => {
 
     text: {
       color: currentTheme.colors.foreground
+    },
+
+    loadingView: {
+      position: 'absolute', 
+      top: 0, 
+      left: 0, 
+      right: 0, 
+      bottom: 0, 
+      justifyContent: 'center', 
+      alignItems: 'center',
+    },
+
+    loadingIndicator: {
+      padding: currentTheme.spacing.m,
+      backgroundColor: currentTheme.colors.background,
+      borderRadius: 32
     },
 
     wrapper: {
@@ -118,12 +134,6 @@ const DiscoverScreen = () => {
           scrollEventThrottle={400}
         >
           <FlatList
-            // // initialNumToRender={12}
-            // onEndReached={() => setEndReached(true)}
-            // onMomentumScrollEnd={() => {
-            //   endReached && loadMoreArtworks
-            // }}
-            // onEndReachedThreshold={200}
             keyExtractor={(item, index) => 1+index.toString()}
             scrollEnabled={false}
             data={artworks}
@@ -137,12 +147,6 @@ const DiscoverScreen = () => {
             )}
           />
           <FlatList
-            // onEndReached={() => setEndReached(true)}
-            // onMomentumScrollEnd={() => {
-            //   endReached && loadMoreArtworks
-            // }}
-            // onEndReachedThreshold={200}
-
             removeClippedSubviews={true}
             keyExtractor={(item, index) => 2+index.toString()}
             scrollEnabled={false}
@@ -157,6 +161,18 @@ const DiscoverScreen = () => {
             )}
           />
         </ScrollView>
+        {loading ? 
+          <View style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center'}}>
+            <ActivityIndicator 
+              animating={true}
+              color={currentTheme.colors.loadingIndicator}
+              style={styles.loadingIndicator}
+              size={32}
+            />
+          </View>
+          :
+          <></>
+        }
       </View>
     </SafeAreaView>
   )

@@ -7,24 +7,34 @@ const palette = {
   black: '#000',
   white: '#fff',
 
+  
+  almostWhite: "#f0edf6",
+  darkPurple: "#3e2465",
   purple: '#614F89',
   pink: '#FEA4B9',
 
-  almostWhite: "#f0edf6",
-  darkPurple: "#3e2465",
+  new_age: '#D7CED1',
+  starry_night_blue: '#334075',
+  conch_shell: '#E6BCAAC',
+  raspberry_blush: '#D85F56',
+  north_sea_green: '#246D74'
+
 }
 
 export const Theme = {
   colors: {
     background: palette.almostWhite,
-    foreground: palette.black,
+    foreground: palette.white,
 
     primary: palette.purple,
     secondary: palette.pink,
 
     tabActive: palette.almostWhite,
     tabAccent: palette.darkPurple,
-    tabBackgound: palette.purple
+    tabBackgound: palette.purple,
+    tabNotification: palette.pink,
+    
+    loadingIndicator: palette.almostWhite
   },
 
   spacing: {
@@ -41,6 +51,11 @@ export const Theme = {
     m: 14,
     l: 16,
     xl: 20,
+    xxl: 32
+  },
+
+  fontFamily: {
+    butler: 'butler_bold_stencil'
   },
 
   textVariants: {
@@ -53,7 +68,7 @@ export const Theme = {
       fontFamily: 'Merriweather',
       fontSize: 16,
     },
-  }
+  },
 };
 
 export const DarkTheme = {
@@ -62,14 +77,17 @@ export const DarkTheme = {
     ...Theme.colors,
 
     background: palette.black,
-    foreground: palette.almostWhite,
+    foreground: palette.new_age,
 
-    primary: palette.purple,
-    secondary: palette.pink,
+    primary: palette.starry_night_blue,
+    secondary: palette.purple,
     
-    tabActive: palette.almostWhite,
-    tabAccent: palette.darkPurple,
-    tabBackgound: palette.purple
+    tabActive: palette.new_age,
+    tabAccent: palette.starry_night_blue,
+    tabBackgound: palette.black,
+    tabNotification: palette.new_age,
+    
+    loadingIndicator: palette.new_age //"New Age" replaced the "Almost White"
   },
   
 };

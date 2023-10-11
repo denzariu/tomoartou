@@ -64,3 +64,5 @@ yarn-error.log
 
 # testing
 /coverage
+android/hs_err_pid36060.log
+android/replay_pid36060.log

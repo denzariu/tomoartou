@@ -39,6 +39,22 @@ import {
   PaperProvider,
 } from 'react-native-paper';
 
+const DarkThemePaperModified = {
+  ...DarkThemePaper,
+  colors: {
+    ...DarkThemePaper,
+    notification: DarkTheme.colors.tabNotification
+  }
+}
+
+const DefaultThemePaperModified = {
+  ...DefaultThemePaper,
+  colors: {
+    ...DefaultThemePaper,
+    notification: Theme.colors.tabNotification
+  }
+}
+
 const Tab = createMaterialBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
@@ -46,7 +62,7 @@ function App(): JSX.Element {
 
   return (
     <SafeAreaProvider>
-      <PaperProvider  theme={useColorScheme() === 'dark' ? DarkThemePaper : DefaultThemePaper}>
+      <PaperProvider  theme={useColorScheme() === 'dark' ? DarkThemePaperModified : DefaultThemePaperModified}>
         <NavigationContainer 
           theme={useColorScheme() === 'dark' ? DarkThemeNav : DefaultThemeNav}
         >
