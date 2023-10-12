@@ -4,6 +4,7 @@ import { DarkTheme, Theme } from '../defaults/ui';
 import { TextInput } from 'react-native';
 import { Modalize } from 'react-native-modalize';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import ModalArtwork from '../components/ModalArtwork';
 
 const SearchScreen = () => {
   
@@ -12,61 +13,31 @@ const SearchScreen = () => {
 
   const [loading, setLoading] = useState<boolean>(false)
   const [fetching, setFetching] = useState<boolean>(false)
+  const [changingInput, setChangingInput] = useState<boolean>(false)
   const [searchInput, setSearchInput] = useState<string | undefined>('');
 
+  const [currentPage, setCurrentPage] = useState<number>(1)
   const [artworksData, setArtworksData] = useState<any | undefined>([])
   const [artworks, setArtworks] = useState<any | undefined>([])
 
+  const [modalOpen, setModalOpen] = useState<any>()
   const [currentItem, setCurrentItem] = useState<any>()
-  const modalizeRef = useRef<Modalize>(null);
 
   const iiif_url = 'https://www.artic.edu/iiif/2/';
   const size_url = '/full/400,/0/default.jpg';
   const larger_size_url = '/full/843,/0/default.jpg';
   // const [imageUrl, setImageUrl] = useState<string>('/full/843,/0/default.jpg');
-  const [artworkImageLink, setArtworkImageLink] = useState<any>([{uri: (iiif_url + currentItem?.image_id + size_url), width: 100, height: 100}, {uri: (iiif_url + currentItem?.image_id + larger_size_url), width: 200, height: 200}])
-  const [isEnlarged, setEnlarged] = useState<boolean>(false)
 
   const LIMIT = 16;
   const OFFSET = 68;
-  const BOTTOM_TAB_OFFSET = 52 //useBottomTabBarHeight()
-  const windowHeight = Dimensions.get('window').height;
+  const BOTTOM_TAB_OFFSET: number = 52 //useBottomTabBarHeight()
 
 
   const getArtworks = () => {
-    // console.log('d:', artworksData)
-    
-    //   artworksData.reduce(async (accPromiseFromLastIter: any, next: any) => {
-    //     const arr = await accPromiseFromLastIter;
-    //     arr.push(await next.json().data);
-    //     return arr;
-    //   }, Promise.resolve([])
-    // )
-  
-    // const artworksCopy: Array<any> = artworksData.reduce(async (result: Array<any>, item: any) => {
-        
-        // console.log(item.api_link + '?fields=id,title,image_id')
-
-      
-      //   const arr = await result;
-      //   await fetch(item.api_link + '?fields=id,title,image_id')
-      //   .then(response => response.json())
-      //   .then(json => {
-          
-      //   })
-      //   .catch(error => {console.log('FETCHING ARTWORKS ONE-BY-ONE FAILED.', error)})
-      // }
-      // console.log(artworksCopy)
-  
-      // return Promise.all(queries.map(q => q.then(res => res.json()))
-      // .then(data => {
-
-      // }) 
-      
       setFetching(true);
       // do fetch requests in parallel
       // using the Promise.all() method
-      const promises = artworksData.map((item: any) => {
+      const promises = artworksData.slice(artworksData.length - 10).map((item: any) => {
         return fetch(`${item.api_link}?limit=${LIMIT}&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title`)
         .then(response => response.json())
         .then(json => {
@@ -80,15 +51,15 @@ const SearchScreen = () => {
 
       allData.then((res) => {
         // artworksCopy.concat(res)
-        setFetching(false);
-        setArtworks(res)
+        setArtworks(artworks.concat(res))
+        setFetching(false)
         console.log(artworks)
       })
   }
   
-
   useEffect(() => {
-    getArtworks()  
+    if(!changingInput)
+      getArtworks()  
   }, [artworksData])
 
   const searchArtworks = async () => {
@@ -96,7 +67,7 @@ const SearchScreen = () => {
     if (searchInput) {
       setLoading(true);
       //https://api.artic.edu/api/v1/artworks/search?query[term][is_public_domain]=true&limit=2&fields=id,title,image_id
-      const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(searchInput)}`
+      const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}`
       console.log(url)
 
       return (
@@ -108,7 +79,7 @@ const SearchScreen = () => {
           
           // setArtworksData(artworks.concat(json.data))
           
-          setArtworksData(json.data)
+          setArtworksData(artworksData.concat(json.data))
           console.log(json.data.length)
           // if(json && json.data && json.data.length)
           setLoading(false)
@@ -123,10 +94,28 @@ const SearchScreen = () => {
 
   useEffect(() => {
     console.log("hello")
-    searchArtworks();
-  }, [searchInput])
+    if (!changingInput)
+      searchArtworks()
+  }, [currentPage])
   
+  useEffect(() => {
+    setChangingInput(true)
+    setCurrentPage(1)
+    setArtworksData([])
+    setArtworks([])
+    setChangingInput(false)
+    searchArtworks()
+  }, [searchInput])
 
+  const loadMoreArtworks = () => {
+    console.log('pls load more')
+    if (!loading && !fetching) { // Also check for list end 
+      setLoading(true);
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      console.log('THANKS')
+    }
+  }
   
 
   const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}: NativeScrollEvent) => {
@@ -164,89 +153,13 @@ const SearchScreen = () => {
   const handleArtworkOpenPress = (item: any) => {
     console.log(item.id)
     setCurrentItem(item)
-    setArtworkImageLink([{uri: (iiif_url + item?.image_id + size_url), width: 100, height: 100}, {uri: (iiif_url + item?.image_id + larger_size_url), width: 200, height: 200}])
-    modalizeRef.current?.open()
+    setModalOpen(true)
   }
 
-  const handleArtworkClosePress = (item: any) => {
-    console.log(item.id)
-    modalizeRef.current?.open()
-  }
-
-  const renderContent = () => [
-    <View key="0">
-      {/* Header section - (with a close button) */}
-      {/* <View style={styles.modalHeader}> */}
-        {/* <TouchableOpacity onPress={handleArtworkClosePress}> */}
-        {/* <MaterialCommunityIcons name="close-circle" color={currentTheme.colors.foreground} size={24} /> */}
-         {/* <SvgXml xml={svgClose} height={24} width={24}
-             fill={colors.quaternary}
-           /> */}
-         {/* </TouchableOpacity> */}
-      {/* </View> */}
-      <View style={styles.modalHeader}>
-        <View style={styles.modalButton}>
-          <TouchableOpacity 
-            onPress={() => {setEnlarged(!isEnlarged), console.log(isEnlarged)}}
-            style={styles.modalImageEnlarge}
-          >
-            {isEnlarged ?
-              <MaterialCommunityIcons name="focus-field-horizontal" color={currentTheme.colors.foreground} size={26} />
-              :
-              <MaterialCommunityIcons name="image-size-select-large" color={currentTheme.colors.foreground} size={26} />
-            }
-          </TouchableOpacity>
-        </View>
-        <View style={styles.modalSection}>
-          <Animated.Image
-            // src={(iiif_url + currentItem?.image_id + larger_size_url)}
-            source={artworkImageLink}
-            onError={() => setArtworkImageLink([{uri: (iiif_url + currentItem?.image_id + size_url), width: 100, height: 100}])}
-            // srcSet= { `${iiif_url + currentItem?.image_id + size_url} 1x, ${iiif_url + currentItem?.image_id + larger_size_url} 2.215x`}
-            // onLoadStart={}
-            // defaultSource={{uri: (iiif_url + currentItem?.image_id + size_url)}}
-            style={[{width: '100%', alignSelf: 'center'}, isEnlarged ? {} : {maxHeight: windowHeight * 0.77}, currentItem?.thumbnail ? {aspectRatio: currentItem.thumbnail.width / currentItem.thumbnail.height} : {}]}
-          />
-          <View style={{flexDirection: 'row'}}>
-            <Text style={styles.modalTitle}>{currentItem?.title.toUpperCase()}</Text>
-          </View>
-          <View style={{flexDirection: 'row'}}>
-            <Text style={styles.modalDetails}>{currentItem?.classification_title}  ●  {currentItem?.dimensions_detail[0]?.width_cm} cm × {currentItem?.dimensions_detail[0]?.height_cm} cm</Text>  
-          </View>
-          <View style={{flexDirection: 'row'}}>
-            <Text style={styles.modalAuthor}>{currentItem?.artist_title? currentItem.artist_title : "Not specified"}</Text>
-            <Text style={styles.modalCirca}>{currentItem?.date_display}</Text>
-          </View>
-          <Text style={styles.modalDescriptionFirst}>{currentItem?.description ? currentItem.description[0] : ''}
-            <Text style={styles.modalDescription}>{currentItem?.description?.slice(1)}</Text>
-          </Text>
-
-        </View>
-      </View>
-    {/* //   Section with Information 
-    //   <View style={styles.modalHeader}>
-    //     <View style={styles.modalSection}>
-    //       <Animated.Image
-    //         source={{uri: foodItem.image}}
-    //         style={[styles.modalImage, styles.coverPhoto]}
-    //       />
-    //       <Text style={styles.modalTitle}>{foodItem.name}</Text>
-    //       <Text style={styles.modalPrice}>{Intl.NumberFormat('ro-RO', {minimumFractionDigits: 2, style: 'currency', currency: 'lei', currencyDisplay: 'name'}).format(foodItem.price / 100).toLowerCase()}</Text>
-    //       <Text style={styles.modalDescription}>{foodItem.description}</Text>
-    //     </View>
-    //       {/* <View style={styles.modalDivider} />   
-    //   </View>
-    // </View>,
-  
-    // <View key="1">
-    //   <View style={styles.modalInfo}>
-    //     <View style={[styles.modalSection, {marginBottom: '15%'}]}>
-    //       <Text style={styles.modalNote}>Leave a note for the kitchen</Text>
-    //     </View>
-    //   </View> }
-    */}
-    </View>
-  ]
+  // const handleArtworkClosePress = (item: any) => {
+  //   console.log(item.id)
+  //   setModalOpen(false)
+  // }
 
   const styles = StyleSheet.create({
     page: {
@@ -305,7 +218,7 @@ const SearchScreen = () => {
     searchContainer: {
       width: '100%',
       height: 60,
-      paddingVertical: 8,
+      paddingVertical: currentTheme.spacing.s,
       backgroundColor: currentTheme.colors.background,
       justifyContent: 'center',
       alignItems: 'center',
@@ -322,100 +235,7 @@ const SearchScreen = () => {
       borderRadius: currentTheme.spacing.s
     },
 
-    modalHeader: {
-      width: '100%',
-      backgroundColor: currentTheme.colors.primary,
-      borderTopLeftRadius: currentTheme.spacing.m,
-      borderTopRightRadius: currentTheme.spacing.m,
-    },
-    
-    modalSection: {
-      backgroundColor: currentTheme.colors.background,
-      // borderRadius: 12,
-      color: currentTheme.colors.primary,
-      fontSize: currentTheme.fontSize.xl,
-      fontWeight: 'bold',
-      marginBottom: currentTheme.spacing.s,
-    },
-
-    modalTitle: {
-      fontFamily: currentTheme.fontFamily.butler,
-      color: currentTheme.colors.foreground,
-      fontSize: currentTheme.fontSize.xl,
-      fontWeight: 'bold',
-      paddingTop: currentTheme.spacing.m,
-      paddingHorizontal: currentTheme.spacing.page
-    },
-
-    modalAuthor: {
-      alignSelf: 'flex-start',
-      color: currentTheme.colors.foreground,
-      fontSize: currentTheme.fontSize.m,
-      fontWeight: 'bold',
-      paddingVertical: currentTheme.spacing.s,
-      marginHorizontal: currentTheme.spacing.page,
-      paddingHorizontal: currentTheme.spacing.m,
-      backgroundColor: currentTheme.colors.primary,
-      borderRadius: currentTheme.spacing.m,
-      width: 'auto'
-    },
-    
-    modalDetails: {
-      color: currentTheme.colors.primary,
-      fontSize: currentTheme.fontSize.s,
-      fontWeight: '300',
-      paddingBottom: currentTheme.spacing.m,
-      marginHorizontal: currentTheme.spacing.page,
-    },
-
-    modalCirca: {
-      color: currentTheme.colors.foreground,
-      fontSize: currentTheme.fontSize.s,
-      fontWeight: '400',
-      paddingVertical: currentTheme.spacing.s,
-      // marginHorizontal: currentTheme.spacing.page,
-      // paddingHorizontal: currentTheme.spacing.m,
-      // backgroundColor: currentTheme.colors.primary,
-      // borderRadius: currentTheme.spacing.m,
-      // width: 'auto'
-    },
-
-    modalImageEnlarge: {
-      zIndex: 201,
-      padding: currentTheme.spacing.m,
-      backgroundColor: currentTheme.colors.primary,
-      borderRadius: currentTheme.spacing.m
-    },
-    
-    modalButton: {
-      position: 'absolute',
-      // bottom:0,
-      top: currentTheme.spacing.m, 
-      right: currentTheme.spacing.page, 
-      // padding: 8, 
-      // backgroundColor: 'red', 
-      zIndex: 200
-    },
-
-    modalDescription: {
-      color: currentTheme.colors.foreground,
-      fontSize: currentTheme.fontSize.s,
-      lineHeight: 20,
-      textAlign: 'justify',
-      fontWeight: '300',
-      paddingTop: currentTheme.spacing.m,
-      marginHorizontal: currentTheme.spacing.page,
-    },
-
-    modalDescriptionFirst: {
-      color: currentTheme.colors.foreground,
-      fontSize: currentTheme.fontSize.xxl,
-      lineHeight: 20,
-      textAlign: 'justify',
-      fontWeight: '300',
-      paddingTop: currentTheme.spacing.l,
-      marginHorizontal: currentTheme.spacing.page,
-    }
+ 
 
   })
 
@@ -425,7 +245,11 @@ const SearchScreen = () => {
         <SearchHeader/>
         
         <ScrollView 
-          
+          onScroll={({nativeEvent}) => {
+            if (isCloseToBottom(nativeEvent)) {
+              loadMoreArtworks();
+            }
+          }}
           // stickyHeaderIndices={[0]}
           // stickyHeaderHiddenOnScroll={false}
           removeClippedSubviews={true}
@@ -487,28 +311,13 @@ const SearchScreen = () => {
           :
           <></>
         }
-        <Modalize
-           ref={modalizeRef}
-           scrollViewProps={{
-             showsVerticalScrollIndicator: false,
-           }}
-           adjustToContentHeight={true}
-          //  handleStyle={{
-          //    backgroundColor: currentTheme.colors.primary + '00',
-          //    position: 'absolute',
-          //    left: 0,
-          //    height: 170, 
-          //    width: '75%',
-          //    zIndex: 100,
-          //  }}
-           modalStyle={{marginBottom: BOTTOM_TAB_OFFSET}}
-          //  HeaderComponent={renderFooter()}
-           handlePosition='inside'
-           velocity={6800}
-           threshold={300}
-        >
-          {renderContent()}
-        </Modalize>
+        <ModalArtwork 
+          currentItem={currentItem}
+          open={modalOpen}
+          OFFSET={BOTTOM_TAB_OFFSET}
+          currentTheme={currentTheme}
+          setOpen={setModalOpen}
+        />
       </SafeAreaView>
     // </SafeAreaView>
   )

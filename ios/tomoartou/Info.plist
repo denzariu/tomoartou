@@ -54,6 +54,8 @@
 	<key>UIAppFonts</key>
 	<array>
 		<string>butler_bold_stencil.otf</string>
+		<string>butler_bold.otf</string>
+		<string>butler_regular.otf</string>
 	</array>
 </dict>
 </plist>

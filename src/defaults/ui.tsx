@@ -42,7 +42,8 @@ export const Theme = {
     m: 16,
     page: 20,
     l: 24,
-    xl: 40,
+    xl: 32,
+    xxl: 40,
   },
 
   fontSize: {
@@ -51,11 +52,14 @@ export const Theme = {
     m: 14,
     l: 16,
     xl: 20,
-    xxl: 32
+    xxl: 24,
+    xxxl: 32
   },
 
   fontFamily: {
-    butler: 'butler_bold_stencil'
+    butler: 'butler_regular',
+    butler_bold: 'butler_bold',
+    butler_stencil: 'butler_bold_stencil',
   },
 
   textVariants: {

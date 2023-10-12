@@ -15,6 +15,8 @@
 		7699B88040F8A987B510C191 /* libPods-tomoartou-tomoartouTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19F6CBCC0A4E27FBF8BF4A61 /* libPods-tomoartou-tomoartouTests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		875B43DCE0494364AB7230D7 /* butler_bold_stencil.otf in Resources */ = {isa = PBXBuildFile; fileRef = B814AE09CDD44D3BA0775CE9 /* butler_bold_stencil.otf */; };
+		86BA16A28443431A9E6F765A /* butler_bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = FE4407DB0BEB45D6AE554D33 /* butler_bold.otf */; };
+		6EEAB43919E2464FA58EA8BE /* butler_regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 70A4FE2CC2264E699316912D /* butler_regular.otf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,6 +48,8 @@
 		89C6BE57DB24E9ADA2F236DE /* Pods-tomoartou-tomoartouTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-tomoartou-tomoartouTests.release.xcconfig"; path = "Target Support Files/Pods-tomoartou-tomoartouTests/Pods-tomoartou-tomoartouTests.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		B814AE09CDD44D3BA0775CE9 /* butler_bold_stencil.otf */ = {isa = PBXFileReference; name = "butler_bold_stencil.otf"; path = "../src/assets/fonts/butler_bold_stencil.otf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		FE4407DB0BEB45D6AE554D33 /* butler_bold.otf */ = {isa = PBXFileReference; name = "butler_bold.otf"; path = "../src/assets/fonts/butler_bold.otf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		70A4FE2CC2264E699316912D /* butler_regular.otf */ = {isa = PBXFileReference; name = "butler_regular.otf"; path = "../src/assets/fonts/butler_regular.otf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -155,6 +159,8 @@
 			isa = "PBXGroup";
 			children = (
 				B814AE09CDD44D3BA0775CE9 /* butler_bold_stencil.otf */,
+				FE4407DB0BEB45D6AE554D33 /* butler_bold.otf */,
+				70A4FE2CC2264E699316912D /* butler_regular.otf */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -257,6 +263,8 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				875B43DCE0494364AB7230D7 /* butler_bold_stencil.otf in Resources */,
+				86BA16A28443431A9E6F765A /* butler_bold.otf in Resources */,
+				6EEAB43919E2464FA58EA8BE /* butler_regular.otf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

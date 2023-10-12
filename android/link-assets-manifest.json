@@ -2,8 +2,16 @@
   "migIndex": 1,
   "data": [
     {
+      "path": "src/assets/fonts/butler_bold.otf",
+      "sha1": "ba8e77bddf1a81b4785ced903368ce00b8462163"
+    },
+    {
       "path": "src/assets/fonts/butler_bold_stencil.otf",
       "sha1": "53dd4480b33572a1220001ef31f4d025b55f4982"
+    },
+    {
+      "path": "src/assets/fonts/butler_regular.otf",
+      "sha1": "75ae939043b3861fd61a7fb42bbc6bf2ebafd1b2"
     }
   ]
 }
