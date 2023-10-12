@@ -210,10 +210,13 @@ const ModalArtwork = ({currentItem, OFFSET, currentTheme, open, setOpen}: ModalA
       onClose={() => setOpen(false)}
       // onOpen={() => handleArtworkOpenPress()}
       adjustToContentHeight={true}
+      disableScrollIfPossible={false}
+      // modalHeight={900}
       modalStyle={{marginBottom: OFFSET}}
       handlePosition='inside'
       velocity={6800}
       threshold={300}
+      // childrenStyle={{padding: 8, backgroundColor: currentTheme.colors.background}}
     >
       {renderContent()}
     </Modalize>

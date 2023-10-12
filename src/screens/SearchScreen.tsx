@@ -141,7 +141,7 @@ const SearchScreen = () => {
           inputMode='text'
           maxLength={100}
           selectTextOnFocus={true}
-          placeholderTextColor={currentTheme.colors.primary}
+          placeholderTextColor={currentTheme.colors.foreground}
           defaultValue={searchInput}
           onSubmitEditing={(text) => handleText(text.nativeEvent.text)}
         >
@@ -228,9 +228,9 @@ const SearchScreen = () => {
     inputContainer: {
       // alignSelf: 'center',
       // paddingVertical: 12,
-      backgroundColor: currentTheme.colors.foreground,
+      backgroundColor: currentTheme.colors.primary,
       width: '100%',
-      color: currentTheme.colors.primary,
+      color: currentTheme.colors.foreground,
       fontWeight: 'bold',
       borderRadius: currentTheme.spacing.s
     },
