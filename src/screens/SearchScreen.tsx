@@ -34,27 +34,27 @@ const SearchScreen = () => {
 
 
   const getArtworks = () => {
-      setFetching(true);
-      // do fetch requests in parallel
-      // using the Promise.all() method
-      const promises = artworksData.slice(artworksData.length - 10).map((item: any) => {
-        return fetch(`${item.api_link}?limit=${LIMIT}&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title`)
-        .then(response => response.json())
-        .then(json => {
-          if (json.data.description)
-            json.data.description = json.data.description.replace(/<[^>]*>/g, '').replaceAll("&quot;", '"').replaceAll("\n", "\n\n")
-          return json.data
-        })
-        .catch(error => {console.log('FETCHING ARTWORKS ONE-BY-ONE FAILED.', error)})
+    setFetching(true);
+    // do fetch requests in parallel
+    // using the Promise.all() method
+    const promises = artworksData.slice(artworksData.length - 10).map((item: any) => {
+      return fetch(`${item.api_link}?limit=${LIMIT}&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title`)
+      .then(response => response.json())
+      .then(json => {
+        if (json.data.description)
+          json.data.description = json.data.description.replace(/<[^>]*>/g, '').replaceAll("&quot;", '"').replaceAll("\n", "\n\n")
+        return json.data
       })
-      const allData = Promise.all(promises);
+      .catch(error => {console.log('FETCHING ARTWORKS ONE-BY-ONE FAILED.', error)})
+    })
+    const allData = Promise.all(promises);
 
-      allData.then((res) => {
-        // artworksCopy.concat(res)
-        setArtworks(artworks.concat(res))
-        setFetching(false)
-        console.log(artworks)
-      })
+    allData.then((res) => {
+      // artworksCopy.concat(res)
+      setArtworks(artworks.concat(res))
+      setFetching(false)
+      console.log(artworks)
+    })
   }
   
   useEffect(() => {
@@ -170,6 +170,7 @@ const SearchScreen = () => {
     },
 
     pageContainer: {
+      flex: 1,
       width: '100%',
       paddingHorizontal: currentTheme.spacing.page
     },

@@ -82,9 +82,9 @@ const ModalArtwork = ({currentItem, OFFSET, currentTheme, open, setOpen}: ModalA
     
     modalDetails: {
       color: currentTheme.colors.primary,
-      fontSize: currentTheme.fontSize.s,
+      fontSize: currentTheme.fontSize.m,
       fontWeight: '300',
-      paddingVertical: currentTheme.spacing.s,
+      paddingBottom: currentTheme.spacing.m,
       paddingHorizontal: currentTheme.spacing.page,
     },
 
@@ -121,7 +121,7 @@ const ModalArtwork = ({currentItem, OFFSET, currentTheme, open, setOpen}: ModalA
       // letterSpacing: 0.3,
       fontFamily: currentTheme.fontFamily.butler, //Test if this is better than default Roboto font
       color: currentTheme.colors.foreground,
-      fontSize: currentTheme.fontSize.s,
+      fontSize: currentTheme.fontSize.m,
       lineHeight: 20,
       textAlign: 'justify',
       fontWeight: '300',
@@ -131,7 +131,7 @@ const ModalArtwork = ({currentItem, OFFSET, currentTheme, open, setOpen}: ModalA
     modalDescriptionFirst: {
       fontFamily: currentTheme.fontFamily.butler_stencil,
       color: currentTheme.colors.foreground,
-      fontSize: currentTheme.fontSize.xxl,
+      fontSize: currentTheme.fontSize.xxxl,
       lineHeight: 20,
       textAlign: 'justify',
       // fontWeight: '300',
@@ -166,11 +166,11 @@ const ModalArtwork = ({currentItem, OFFSET, currentTheme, open, setOpen}: ModalA
             style={[{width: '100%', alignSelf: 'center'}, isEnlarged ? {} : {maxHeight: windowHeight * 0.77}, currentItem?.thumbnail ? {aspectRatio: currentItem.thumbnail.width / currentItem.thumbnail.height} : {}]}
           />
           <View style={{flexDirection: 'row'}}>
-            <Text style={styles.modalTitle}>{currentItem?.title.toUpperCase()}</Text>
+            <Text style={styles.modalTitle}>{currentItem?.title}</Text>
           </View>
-          {currentItem?.classificantion_title  ?
+          {currentItem?.classification_title  ?
             <View style={{flexDirection: 'row'}}>
-              <Text style={styles.modalDetails}>{currentItem?.classification_title}  ●  {currentItem?.dimensions_detail[0]?.width_cm} cm × {currentItem?.dimensions_detail[0]?.height_cm} cm</Text>  
+              <Text style={styles.modalDetails} numberOfLines={1}>{currentItem?.classification_title[0]?.toUpperCase() + currentItem?.classification_title?.slice(1)}  ●  {currentItem?.dimensions_detail[0]?.width_cm} cm × {currentItem?.dimensions_detail[0]?.height_cm} cm</Text>  
             </View>
             :
             <></>
@@ -181,7 +181,7 @@ const ModalArtwork = ({currentItem, OFFSET, currentTheme, open, setOpen}: ModalA
           </View>
           {currentItem?.description ?
             <Text style={styles.modalDescriptionFirst}>{currentItem?.description ? currentItem.description[0] : ''}
-              <Text style={styles.modalDescription}>{currentItem?.description?.slice(1)}</Text>
+              <Text style={styles.modalDescription} numberOfLines={1}>{currentItem?.description?.slice(1)}</Text>
             </Text>
             :
             <></>
@@ -214,7 +214,7 @@ const ModalArtwork = ({currentItem, OFFSET, currentTheme, open, setOpen}: ModalA
       // modalHeight={900}
       modalStyle={{marginBottom: OFFSET}}
       handlePosition='inside'
-      velocity={6800}
+      velocity={4600} //previous 6800
       threshold={300}
       // childrenStyle={{padding: 8, backgroundColor: currentTheme.colors.background}}
     >
