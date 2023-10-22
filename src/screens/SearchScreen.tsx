@@ -2,122 +2,160 @@ import { ActivityIndicator, Animated, Dimensions, FlatList, Image, NativeScrollE
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { DarkTheme, Theme } from '../defaults/ui';
 import { TextInput } from 'react-native';
-import { Modalize } from 'react-native-modalize';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import ModalArtwork from '../components/ModalArtwork';
+
 
 const SearchScreen = () => {
   
   const isDarkMode = useColorScheme() === 'dark';
   const currentTheme = isDarkMode ? DarkTheme : Theme;
 
+  type categories = 'artworks' | 'artists' | undefined
+  const [field, setField] = useState<categories>('artworks');
+  
   const [loading, setLoading] = useState<boolean>(false)
   const [fetching, setFetching] = useState<boolean>(false)
-  const [changingInput, setChangingInput] = useState<boolean>(false)
-  const [searchInput, setSearchInput] = useState<string | undefined>('');
+  const [changingInput, setChangingInput] = useState<boolean>(true)
+  const [searchInput, setSearchInput] = useState<string | number | boolean>('');
 
   const [currentPage, setCurrentPage] = useState<number>(1)
-  const [artworksData, setArtworksData] = useState<any | undefined>([])
+  const [maxPages, setMaxPages] = useState<number>(99999999)
+  // const [artworksData, setArtworksData] = useState<any | undefined>([])
   const [artworks, setArtworks] = useState<any | undefined>([])
 
   const [modalOpen, setModalOpen] = useState<any>()
   const [currentItem, setCurrentItem] = useState<any>()
 
+  const [heightRow1, setHeightRow1] = useState<number>(0)
+  const [heightRow2, setHeightRow2] = useState<number>(0)
+
   const iiif_url = 'https://www.artic.edu/iiif/2/';
   const size_url = '/full/400,/0/default.jpg';
-  const larger_size_url = '/full/843,/0/default.jpg';
-  // const [imageUrl, setImageUrl] = useState<string>('/full/843,/0/default.jpg');
 
   const LIMIT = 16;
   const OFFSET = 68;
-  const BOTTOM_TAB_OFFSET: number = 52 //useBottomTabBarHeight()
+  const BOTTOM_TAB_OFFSET: number = 0 //useBottomTabBarHeight()
 
+  const loadArtworks = () => {
+    const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title`
+        
+    fetch(url)
+    .then(response => response.json())
+    .then(json => {
+      setMaxPages(json.pagination.total_pages)
 
-  const getArtworks = () => {
-    setFetching(true);
-    // do fetch requests in parallel
-    // using the Promise.all() method
-    const promises = artworksData.slice(artworksData.length - 10).map((item: any) => {
-      return fetch(`${item.api_link}?limit=${LIMIT}&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title`)
-      .then(response => response.json())
-      .then(json => {
-        if (json.data.description)
-          json.data.description = json.data.description.replace(/<[^>]*>/g, '').replaceAll("&quot;", '"').replaceAll("\n", "\n\n")
-        return json.data
+      console.log("This will add: ", json.data.length, " artworks")
+      if (json.data.length <= 0) {
+        setFetching(false)
+        setLoading(false)
+        return
+      }
+
+      let S1: number = heightRow1
+      let S2: number = heightRow2
+
+      json.data = json.data.map( (item: any) => {
+        if (item?.thumbnail) {
+          if (S1 <= S2) {
+            item.row = 0
+            S1 += item.thumbnail?.height / item.thumbnail?.width
+          }
+          else {
+            item.row = 1
+            S2 += item.thumbnail?.height / item.thumbnail?.width
+          }
+        }
+        item.title = item.title.replace('(', "\n(")
+        if (item.description)
+          item.description = item.description.replace(/<[^>]*>/g, '').replaceAll("&quot;", '"').replaceAll("\n", "\n\n")
+        return item
       })
-      .catch(error => {console.log('FETCHING ARTWORKS ONE-BY-ONE FAILED.', error)})
-    })
-    const allData = Promise.all(promises);
 
-    allData.then((res) => {
-      // artworksCopy.concat(res)
-      setArtworks(artworks.concat(res))
+      console.log(json.data)
+      console.log("After:", {row1: S1, row2: S2})
+
+      if (S1 > 50 && S2 > 50)
+        S1 -= 50, S2 -= 50
+
+      setHeightRow1(S1)
+      setHeightRow2(S2)
+      setArtworks(artworks.concat(json.data))
+
+    })
+    .catch(error => {
+      console.log('FETCHING ARTWORKS FAILED.', error)
+    }) 
+    .finally(() => {
       setFetching(false)
-      console.log(artworks)
+      setLoading(false)
     })
   }
-  
-  useEffect(() => {
-    if(!changingInput)
-      getArtworks()  
-  }, [artworksData])
 
-  const searchArtworks = async () => {
+  const loadArtists = () => {
+    const url = `https://api.artic.edu/api/v1/agents/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&fields=id,title,description`
+        
+    fetch(url)
+    .then(response => response.json())
+    .then(json => {
 
-    if (searchInput) {
-      setLoading(true);
-      //https://api.artic.edu/api/v1/artworks/search?query[term][is_public_domain]=true&limit=2&fields=id,title,image_id
-      const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}`
-      console.log(url)
+      setMaxPages(json.pagination.total_pages)
 
-      return (
-        setFetching(true),
-        await fetch(url)
-        .then(response => response.json())
-        .then(json => {
-          // setArtworks(artworks.concat(json.data))
-          
-          // setArtworksData(artworks.concat(json.data))
-          
-          setArtworksData(artworksData.concat(json.data))
-          console.log(json.data.length)
-          // if(json && json.data && json.data.length)
-          setLoading(false)
-          setFetching(false)
-        })
-        .catch(error => {
-          console.log('FETCHING ARTWORKS FAILED.', error)
-        }) 
-      )
+      console.log("This will add: ", json.data.length, " artists")
+      if (json.data.length <= 0) {
+        setFetching(false)
+        setLoading(false)
+        return
+      }
+
+      json.data = json.data.map( (item: any) => {
+        item.title = item.title.replace('(', "\n(")
+        if (item.description)
+          item.description = item.description.replace(/<[^>]*>/g, '').replaceAll("&quot;", '"').replaceAll("\n", "\n\n")
+        return item
+      })
+      
+      setArtworks(artworks.concat(json.data))
+
+    })
+    .catch(error => {
+      console.log('FETCHING ARTWORKS FAILED.', error)
+    }) 
+    .finally(() => {
+      setFetching(false)
+      setLoading(false)
+    })
+  }
+
+  const searchArtworks = () => {
+    if (searchInput != '') {
+      setFetching(true)
+      setLoading(true)
+ 
+      switch (field) {
+        case 'artworks': 
+          loadArtworks()
+          break
+        case 'artists':
+          loadArtists()
+          break
+      }
     }
   }
 
   useEffect(() => {
-    console.log("hello")
+    console.log({ maximum_pages: maxPages, current_page: currentPage, changing_input: changingInput })
     if (!changingInput)
       searchArtworks()
   }, [currentPage])
   
-  useEffect(() => {
-    setChangingInput(true)
-    setCurrentPage(1)
-    setArtworksData([])
-    setArtworks([])
-    setChangingInput(false)
-    searchArtworks()
-  }, [searchInput])
-
-  const loadMoreArtworks = () => {
-    console.log('pls load more')
-    if (!loading && !fetching) { // Also check for list end 
-      setLoading(true);
-      const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
-      console.log('THANKS')
+  const loadMoreArtworks = () => {    
+    if (!loading && !fetching && !changingInput && maxPages > currentPage) {
+      setLoading(true)
+      const currentPageCopy = currentPage; //This is necessary in order to trigger an update
+      setCurrentPage(currentPageCopy + 1);
     }
   }
   
-
   const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}: NativeScrollEvent) => {
     const paddingToBottom = 260; // Proximity to bottom, triggering event
     return layoutMeasurement.height + contentOffset.y >=
@@ -127,6 +165,15 @@ const SearchScreen = () => {
   const handleText = (text: string) => { 
     setSearchInput(text); 
   } 
+
+  useEffect(() => {
+    setChangingInput(() => {return true})
+    setCurrentPage(() => {return 0})
+    setArtworks([])
+    setChangingInput(() => {return false})
+    
+    loadMoreArtworks()
+  }, [searchInput])
 
   
   const SearchHeader = () => {
@@ -151,15 +198,9 @@ const SearchScreen = () => {
   }
 
   const handleArtworkOpenPress = (item: any) => {
-    console.log(item.id)
     setCurrentItem(item)
     setModalOpen(true)
   }
-
-  // const handleArtworkClosePress = (item: any) => {
-  //   console.log(item.id)
-  //   setModalOpen(false)
-  // }
 
   const styles = StyleSheet.create({
     page: {
@@ -185,6 +226,18 @@ const SearchScreen = () => {
 
     text: {
       color: currentTheme.colors.foreground
+    },
+
+    textNoMoreArtworks: {
+      
+      fontSize: currentTheme.fontSize.xl,
+      fontFamily: currentTheme.fontFamily.butler_bold,
+      textAlignVertical: 'center',
+      textAlign: 'center'
+    },
+
+    rotate90: {
+      transform: [{ rotate: '90deg' }]
     },
 
     loadingView: {
@@ -235,10 +288,41 @@ const SearchScreen = () => {
       fontWeight: 'bold',
       borderRadius: currentTheme.spacing.s
     },
-
- 
-
   })
+
+  const Artwork = (item: any, row: number) => {
+    return (
+      (item.row == row && item && (item.image_id && item.thumbnail && item.thumbnail.height > 0)) ?
+      <TouchableOpacity 
+        style={styles.artworkTouchable} 
+        onPress={() => {handleArtworkOpenPress(item)}}
+        activeOpacity={0.9}
+      >
+        <Image 
+          source={{uri: (iiif_url + item.image_id + size_url)}} style={[{width: '100%'}, item.thumbnail ? {aspectRatio: item.thumbnail.width / item.thumbnail.height} : {}]} 
+        /> 
+      </TouchableOpacity>:<></>
+    )
+  }
+
+  const Artist = (item: any, index: number, row: number) => {
+    return (
+      (index % 2 == row && item) ?
+      <TouchableOpacity 
+        style={[styles.artworkTouchable, {padding: 2}]} 
+        onPress={() => {handleArtworkOpenPress(item)}}
+        activeOpacity={0.9}
+      >
+        <Image 
+          source={{uri: 'https://pyxis.nymag.com/v1/imgs/2cb/2e1/47a72da70b3f7a301273b06cac9ea615c8-06-bob-ross-painting.rsquare.w400.jpg'}} 
+          style={{width: '100%', aspectRatio: 1, borderRadius: 8}} 
+        /> 
+        <Text 
+          numberOfLines={1}
+          style={{position: 'relative', paddingLeft: currentTheme.spacing.s, bottom: 20, marginBottom: -20, color: currentTheme.colors.background, fontFamily: currentTheme.fontFamily.butler}}>{item?.title}</Text>
+      </TouchableOpacity>:<></>
+    )
+  }
 
   return (
     // <SafeAreaView style={styles.page}>
@@ -267,16 +351,9 @@ const SearchScreen = () => {
             contentContainerStyle={styles.list}
             style={{height: '100%'}}
             renderItem={({ item, index }) => (
-              (index % 2 == 0 && item && (item.image_id && item.thumbnail && item.thumbnail.height > 0)) ?
-              <TouchableOpacity 
-                style={styles.artworkTouchable} 
-                onPress={() => {handleArtworkOpenPress(item)}}
-                activeOpacity={0.9}
-              >
-                <Image 
-                  source={{uri: (iiif_url + item.image_id + size_url)}} style={[{width: '100%'}, item.thumbnail ? {aspectRatio: item.thumbnail.width / item.thumbnail.height} : {}]} 
-                /> 
-              </TouchableOpacity>:<></>            
+                field == 'artworks' ? Artwork(item, 0) :
+                field == 'artists' ? Artist(item, index, 0) : <></> 
+              
             )}
           />
           <FlatList
@@ -287,16 +364,9 @@ const SearchScreen = () => {
             contentContainerStyle={styles.list}
             style={{height: '100%'}}
             renderItem={({ item, index }) => (
-              (index % 2 == 1 && item && (item.image_id && item.thumbnail && item.thumbnail.height > 0)) ?
-              <TouchableOpacity 
-                style={styles.artworkTouchable} 
-                onPress={() => {handleArtworkOpenPress(item)}}
-                activeOpacity={0.9}
-              >
-                <Image 
-                  source={{uri: (iiif_url + item.image_id + size_url)}} style={[{width: '100%'}, item.thumbnail ? {aspectRatio: item.thumbnail.width / item.thumbnail.height} : {}]} 
-                /> 
-              </TouchableOpacity>:<></>            
+              field == 'artworks' ? Artwork(item, 1) :
+              field == 'artists' ? Artist(item, index, 1) : <></> 
+            
             )}
           />
         </ScrollView>
@@ -308,6 +378,14 @@ const SearchScreen = () => {
               style={styles.loadingIndicator}
               size={32}
             />
+          </View>
+          :
+          <></>
+        }
+        {(maxPages <= currentPage && maxPages != 99999999) ? 
+          <View style={{flex: 1}}>
+            <Text style={styles.textNoMoreArtworks}>You've reached the end</Text>
+            <Text style={[styles.textNoMoreArtworks, styles.rotate90]}>:)</Text>
           </View>
           :
           <></>

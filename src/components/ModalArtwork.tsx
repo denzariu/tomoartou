@@ -85,7 +85,6 @@ const ModalArtwork = ({currentItem, OFFSET, currentTheme, open, setOpen}: ModalA
       fontSize: currentTheme.fontSize.m,
       fontWeight: '300',
       paddingBottom: currentTheme.spacing.m,
-      paddingHorizontal: currentTheme.spacing.page,
     },
 
     modalCirca: {
@@ -168,13 +167,20 @@ const ModalArtwork = ({currentItem, OFFSET, currentTheme, open, setOpen}: ModalA
           <View style={{flexDirection: 'row'}}>
             <Text style={styles.modalTitle}>{currentItem?.title}</Text>
           </View>
-          {currentItem?.classification_title  ?
-            <View style={{flexDirection: 'row'}}>
-              <Text style={styles.modalDetails} numberOfLines={1}>{currentItem?.classification_title[0]?.toUpperCase() + currentItem?.classification_title?.slice(1)}  ●  {currentItem?.dimensions_detail[0]?.width_cm} cm × {currentItem?.dimensions_detail[0]?.height_cm} cm</Text>  
+            <View style={{flexDirection: 'row', paddingHorizontal: currentTheme.spacing.page}}>
+              {currentItem?.classification_title ?
+              <Text style={styles.modalDetails} numberOfLines={1}>{currentItem?.classification_title[0]?.toUpperCase() + currentItem?.classification_title?.slice(1)}</Text>  
+              :
+              <></>
+              }
+              {currentItem?.dimensions_detail ?
+              <Text style={styles.modalDetails} numberOfLines={1}>  ●  {currentItem?.dimensions_detail[0]?.width_cm} cm × {currentItem?.dimensions_detail[0]?.height_cm} cm</Text>  
+              :
+              <></>
+              }
+              
             </View>
-            :
-            <></>
-          }
+          
           <View style={{flexDirection: 'row'}}>
             <Text style={styles.modalAuthor}>{currentItem?.artist_title? currentItem.artist_title : "Not specified"}</Text>
             <Text style={styles.modalCirca}>{currentItem?.date_display}</Text>

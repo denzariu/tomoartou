@@ -68,8 +68,7 @@ const HomeScreen = ({...props}) => {
     setFetching(true)
     await fetch(url)
       .then(response => response.json())
-      .then(json => 
-        {
+      .then(json => {
           setFetching(false)
 
           json.data = json.data.map( (item: any) => {  
@@ -86,8 +85,7 @@ const HomeScreen = ({...props}) => {
 
           setArtworks(json.data)
           setLoading(false)
-        }
-      )
+      })
   }, [artworkId])
 
   useEffect(() => {
