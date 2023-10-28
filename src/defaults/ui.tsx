@@ -4,8 +4,8 @@ import color from 'color';
 
 
 const palette = {
-  black: '#000',
-  white: '#fff',
+  black: '#000000',
+  white: '#ffffff',
 
   
   almostWhite: "#f0edf6",
@@ -15,7 +15,7 @@ const palette = {
 
   new_age: '#D7CED1',
   starry_night_blue: '#334075',
-  conch_shell: '#E6BCAAC',
+  conch_shell: '#E6BCAC',
   raspberry_blush: '#D85F56',
   north_sea_green: '#246D74'
 
@@ -24,20 +24,21 @@ const palette = {
 export const Theme = {
   colors: {
     background: palette.almostWhite,
-    foreground: palette.white,
+    foreground: palette.starry_night_blue,
 
-    primary: palette.purple,
-    secondary: palette.pink,
-
-    tabActive: palette.almostWhite,
-    tabAccent: palette.darkPurple,
-    tabBackgound: palette.purple,
-    tabNotification: palette.pink,
+    primary: palette.starry_night_blue,
+    secondary: palette.purple,
     
-    loadingIndicator: palette.almostWhite
+    tabActive: palette.almostWhite,
+    tabAccent: palette.almostWhite + '77',
+    tabBackgound: palette.starry_night_blue,
+    tabNotification: palette.new_age,
+    
+    loadingIndicator: palette.new_age
   },
 
   spacing: {
+    xs: 4,
     s: 8,
     m: 16,
     page: 20,

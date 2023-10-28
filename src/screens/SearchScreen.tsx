@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { DarkTheme, Theme } from '../defaults/ui';
 import { TextInput } from 'react-native';
 import ModalArtwork from '../components/ModalArtwork';
+import LinearGradient from 'react-native-linear-gradient';
 
 
 const SearchScreen = () => {
@@ -10,11 +11,12 @@ const SearchScreen = () => {
   const isDarkMode = useColorScheme() === 'dark';
   const currentTheme = isDarkMode ? DarkTheme : Theme;
 
-  type categories = 'artworks' | 'artists' | undefined
+  type categories = 'artworks' | 'artists' | 'places' | undefined
+  type fetchStatus = 'success' | 'error' | 'unknown' | 'loading'
   const [field, setField] = useState<categories>('artworks');
   
   const [loading, setLoading] = useState<boolean>(false)
-  const [fetching, setFetching] = useState<boolean>(false)
+  const [fetching, setFetching] = useState<fetchStatus>('unknown')
   const [changingInput, setChangingInput] = useState<boolean>(true)
   const [searchInput, setSearchInput] = useState<string | number | boolean>('');
 
@@ -38,15 +40,16 @@ const SearchScreen = () => {
 
   const loadArtworks = () => {
     const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title`
-        
+      
+    console.log("searching for ", searchInput)
     fetch(url)
     .then(response => response.json())
     .then(json => {
       setMaxPages(json.pagination.total_pages)
 
+      setFetching('success')
       console.log("This will add: ", json.data.length, " artworks")
       if (json.data.length <= 0) {
-        setFetching(false)
         setLoading(false)
         return
       }
@@ -80,13 +83,12 @@ const SearchScreen = () => {
       setHeightRow1(S1)
       setHeightRow2(S2)
       setArtworks(artworks.concat(json.data))
-
     })
     .catch(error => {
+      setFetching('error')
       console.log('FETCHING ARTWORKS FAILED.', error)
     }) 
     .finally(() => {
-      setFetching(false)
       setLoading(false)
     })
   }
@@ -100,9 +102,10 @@ const SearchScreen = () => {
 
       setMaxPages(json.pagination.total_pages)
 
+      setFetching('success')
+
       console.log("This will add: ", json.data.length, " artists")
       if (json.data.length <= 0) {
-        setFetching(false)
         setLoading(false)
         return
       }
@@ -118,17 +121,54 @@ const SearchScreen = () => {
 
     })
     .catch(error => {
+      setFetching('error')
       console.log('FETCHING ARTWORKS FAILED.', error)
     }) 
     .finally(() => {
-      setFetching(false)
+      setLoading(false)
+    })
+  }
+
+  const loadPlaces = () => {
+    const url = `https://api.artic.edu/api/v1/places/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}`
+    //&fields=id,title,description`
+        
+    fetch(url)
+    .then(response => response.json())
+    .then(json => {
+
+      setMaxPages(json.pagination.total_pages)
+
+      setFetching('success')
+
+      console.log("This will add: ", json.data.length, " artists")
+      if (json.data.length <= 0) {
+        setLoading(false)
+        return
+      }
+
+      json.data = json.data.map( (item: any) => {
+        item.title = item.title.replace('(', "\n(")
+        if (item.description)
+          item.description = item.description.replace(/<[^>]*>/g, '').replaceAll("&quot;", '"').replaceAll("\n", "\n\n")
+        return item
+      })
+      
+      setArtworks(artworks.concat(json.data))
+
+    })
+    .catch(error => {
+      setFetching('error')
+      console.log('FETCHING ARTWORKS FAILED.', error)
+    }) 
+    .finally(() => {
       setLoading(false)
     })
   }
 
   const searchArtworks = () => {
     if (searchInput != '') {
-      setFetching(true)
+      setFetching('loading')
       setLoading(true)
  
       switch (field) {
@@ -137,6 +177,9 @@ const SearchScreen = () => {
           break
         case 'artists':
           loadArtists()
+          break
+        case 'places':
+          loadPlaces()
           break
       }
     }
@@ -149,7 +192,7 @@ const SearchScreen = () => {
   }, [currentPage])
   
   const loadMoreArtworks = () => {    
-    if (!loading && !fetching && !changingInput && maxPages > currentPage) {
+    if (!loading && fetching != 'loading' && !changingInput && maxPages > currentPage) {
       setLoading(true)
       const currentPageCopy = currentPage; //This is necessary in order to trigger an update
       setCurrentPage(currentPageCopy + 1);
@@ -173,7 +216,7 @@ const SearchScreen = () => {
     setChangingInput(() => {return false})
     
     loadMoreArtworks()
-  }, [searchInput])
+  }, [searchInput, field])
 
   
   const SearchHeader = () => {
@@ -184,15 +227,35 @@ const SearchScreen = () => {
           style={styles.inputContainer}
           textAlign='center'
           textAlignVertical='center'
-          placeholder='Search for artworks or artists...'
+          placeholder={`Search for ${field}...`}
           inputMode='text'
           maxLength={100}
           selectTextOnFocus={true}
           placeholderTextColor={currentTheme.colors.foreground}
-          defaultValue={searchInput}
+          defaultValue={String(searchInput)}
           onSubmitEditing={(text) => handleText(text.nativeEvent.text)}
         >
         </TextInput>
+        <View style={{width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly'}}>
+          <TouchableOpacity 
+            style={[styles.searchCategory, field == 'artworks' ? styles.highlightCategory : {}]}
+            onPress={() => setField('artworks')}
+          >
+            <Text style={styles.searchCategoryText}>Artworks</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.searchCategory, field == 'artists' ? styles.highlightCategory : {}]}
+            onPress={() => setField('artists')}
+          >
+            <Text style={styles.searchCategoryText}>Agents</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.searchCategory, field == 'places' ? styles.highlightCategory : {}]}
+            onPress={() => setField('places')}
+          >
+            <Text style={styles.searchCategoryText}>Places</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     )
   }
@@ -229,7 +292,6 @@ const SearchScreen = () => {
     },
 
     textNoMoreArtworks: {
-      
       fontSize: currentTheme.fontSize.xl,
       fontFamily: currentTheme.fontFamily.butler_bold,
       textAlignVertical: 'center',
@@ -241,7 +303,6 @@ const SearchScreen = () => {
     },
 
     loadingView: {
-
       position: 'absolute', 
       top: 0, 
       left: 0, 
@@ -266,12 +327,12 @@ const SearchScreen = () => {
     list: {
         flex: 1,
         flexDirection: 'column',
-        paddingVertical: 10,
+        paddingBottom: 10,
     },
 
     searchContainer: {
       width: '100%',
-      height: 60,
+      // height: 60,
       paddingVertical: currentTheme.spacing.s,
       backgroundColor: currentTheme.colors.background,
       justifyContent: 'center',
@@ -288,6 +349,57 @@ const SearchScreen = () => {
       fontWeight: 'bold',
       borderRadius: currentTheme.spacing.s
     },
+
+    searchCategory: {
+      backgroundColor: currentTheme.colors.primary,
+      paddingHorizontal: currentTheme.spacing.m,
+      paddingVertical: currentTheme.spacing.s,
+      borderRadius: currentTheme.spacing.s,
+      marginTop: currentTheme.spacing.s,
+      opacity: 0.5
+    },
+
+    highlightCategory: {
+      borderWidth: 1,
+      borderColor: currentTheme.colors.foreground,
+      paddingHorizontal: currentTheme.spacing.m - 1,
+      paddingVertical: currentTheme.spacing.s - 1,
+      opacity: 1
+      // backgroundColor: currentTheme.colors.background,
+    },
+
+    searchCategoryText: {
+      fontWeight: '500',
+      fontSize: currentTheme.fontSize.xs
+    },
+
+    gradient: {
+      bottom: currentTheme.spacing.xl + currentTheme.spacing.l, // + paddingTop
+      marginBottom: -currentTheme.spacing.xl + currentTheme.spacing.l, // same as above
+      paddingTop: currentTheme.spacing.l,
+    },
+
+    artistTouchable: {
+      width: '100%', 
+      aspectRatio: 0.91, 
+      borderTopLeftRadius: currentTheme.spacing.s, 
+      borderTopRightRadius: currentTheme.spacing.s
+    },
+
+    artistText: {
+      position: 'relative',
+      paddingHorizontal: currentTheme.spacing.s,
+      paddingVertical: currentTheme.spacing.s,
+      color: currentTheme.colors.foreground,
+      fontSize: currentTheme.fontSize.m,
+      // fontWeight: '500',
+      fontFamily: currentTheme.fontFamily.butler,
+      // borderColor: currentTheme.colors.background,
+      // borderWidth: 2,
+      // borderTopWidth: 2,
+      // background: 'linear-gradient(90deg, rgba(9,9,121,1) 0%, rgba(0,212,255,1) 100%)'
+      // backgroundColor: (currentTheme.colors.primary).concat('cc')
+    }
   })
 
   const Artwork = (item: any, row: number) => {
@@ -309,17 +421,43 @@ const SearchScreen = () => {
     return (
       (index % 2 == row && item) ?
       <TouchableOpacity 
-        style={[styles.artworkTouchable, {padding: 2}]} 
+        style={[styles.artworkTouchable, {marginBottom: -currentTheme.spacing.xxl, padding: currentTheme.spacing.xs}]} 
         onPress={() => {handleArtworkOpenPress(item)}}
         activeOpacity={0.9}
       >
         <Image 
           source={{uri: 'https://pyxis.nymag.com/v1/imgs/2cb/2e1/47a72da70b3f7a301273b06cac9ea615c8-06-bob-ross-painting.rsquare.w400.jpg'}} 
-          style={{width: '100%', aspectRatio: 1, borderRadius: 8}} 
+          style={styles.artistTouchable} 
+        /> 
+        <LinearGradient
+          style={styles.gradient}
+          // locations={[0, 0.9]}
+          colors={[currentTheme.colors.background+'00', currentTheme.colors.background]}
+        >
+          <Text
+            numberOfLines={1}
+            style={styles.artistText}>{item?.title}
+          </Text>
+        </LinearGradient>
+      </TouchableOpacity>:<></>
+    )
+  }
+
+  const Place = (item: any, index: number, row: number) => {
+    return (
+      (index % 2 == row && item) ?
+      <TouchableOpacity 
+        style={[styles.artworkTouchable, {padding: currentTheme.spacing.xs}]} 
+        onPress={() => {handleArtworkOpenPress(item)}}
+        activeOpacity={0.9}
+      >
+        <Image 
+          source={{uri: 'https://pyxis.nymag.com/v1/imgs/2cb/2e1/47a72da70b3f7a301273b06cac9ea615c8-06-bob-ross-painting.rsquare.w400.jpg'}} 
+          style={{width: '100%', aspectRatio: 0.85, borderRadius: currentTheme.spacing.s}} 
         /> 
         <Text 
           numberOfLines={1}
-          style={{position: 'relative', paddingLeft: currentTheme.spacing.s, bottom: 20, marginBottom: -20, color: currentTheme.colors.background, fontFamily: currentTheme.fontFamily.butler}}>{item?.title}</Text>
+          style={styles.artistText}>{item?.title}</Text>
       </TouchableOpacity>:<></>
     )
   }
@@ -345,15 +483,15 @@ const SearchScreen = () => {
           style={{marginBottom: BOTTOM_TAB_OFFSET}}
         >
           <FlatList
-            keyExtractor={(item, index) => 1  + index.toString()}
+            keyExtractor={(item, index) => 1 + index.toString()}
             scrollEnabled={false}
             data={artworks}
             contentContainerStyle={styles.list}
             style={{height: '100%'}}
             renderItem={({ item, index }) => (
                 field == 'artworks' ? Artwork(item, 0) :
-                field == 'artists' ? Artist(item, index, 0) : <></> 
-              
+                field == 'artists' ? Artist(item, index, 0) : 
+                field == 'places' ? Place(item, index, 1) : <></> 
             )}
           />
           <FlatList
@@ -365,12 +503,13 @@ const SearchScreen = () => {
             style={{height: '100%'}}
             renderItem={({ item, index }) => (
               field == 'artworks' ? Artwork(item, 1) :
-              field == 'artists' ? Artist(item, index, 1) : <></> 
+              field == 'artists' ? Artist(item, index, 1) : 
+              field == 'places' ? Place(item, index, 1) : <></> 
             
             )}
           />
         </ScrollView>
-        {(loading || fetching) ? 
+        {(loading || fetching == 'loading') ? 
           <View style={styles.loadingView}>
             <ActivityIndicator 
               animating={true}

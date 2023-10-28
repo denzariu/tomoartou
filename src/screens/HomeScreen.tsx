@@ -98,7 +98,8 @@ const HomeScreen = ({...props}) => {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingHorizontal: currentTheme.spacing.page
+      paddingHorizontal: currentTheme.spacing.page,
+      backgroundColor: currentTheme.colors.background,
     },
 
     imageView: {

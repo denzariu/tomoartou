@@ -62,12 +62,14 @@ function App(): JSX.Element {
 
   return (
     <SafeAreaProvider>
-      <PaperProvider  theme={useColorScheme() === 'dark' ? DarkThemePaperModified : DefaultThemePaperModified}>
+      <PaperProvider  theme={useColorScheme() == 'dark' ? DarkThemePaperModified : DefaultThemePaperModified}>
         <NavigationContainer 
-          theme={useColorScheme() === 'dark' ? DarkThemeNav : DefaultThemeNav}
+          theme={useColorScheme() == 'dark' ? DarkThemeNav : DefaultThemeNav}
         >
           <Stack.Navigator 
             screenOptions={{
+              statusBarStyle: useColorScheme() == 'dark' ? 'light' : 'dark',
+              statusBarColor: useColorScheme() == 'dark' ? DarkTheme.colors.tabBackgound : Theme.colors.background,
               headerShown: false
             }}
             >
