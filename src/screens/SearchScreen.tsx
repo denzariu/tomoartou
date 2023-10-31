@@ -1,18 +1,28 @@
-import { ActivityIndicator, Animated, Dimensions, FlatList, Image, NativeScrollEvent, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View, useColorScheme } from 'react-native'
+import { ActivityIndicator, Animated, DimensionValue, Dimensions, FlatList, Image, LayoutAnimation, NativeScrollEvent, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View, useColorScheme } from 'react-native'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { TextInput } from 'react-native-paper';
+// import Animated from 'react-native-reanimated';
 import { DarkTheme, Theme } from '../defaults/ui';
-import { TextInput } from 'react-native';
+// import { TextInput } from 'react-native';
 import ModalArtwork from '../components/ModalArtwork';
 import LinearGradient from 'react-native-linear-gradient';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+type categories = 'artworks' | 'artists' | 'places' | undefined
+type fetchStatus = 'success' | 'error' | 'unknown' | 'loading'
 
 const SearchScreen = () => {
   
   const isDarkMode = useColorScheme() === 'dark';
   const currentTheme = isDarkMode ? DarkTheme : Theme;
 
-  type categories = 'artworks' | 'artists' | 'places' | undefined
-  type fetchStatus = 'success' | 'error' | 'unknown' | 'loading'
   const [field, setField] = useState<categories>('artworks');
   
   const [loading, setLoading] = useState<boolean>(false)
@@ -219,44 +229,160 @@ const SearchScreen = () => {
   }, [searchInput, field])
 
   
+  
   const SearchHeader = () => {
+    const fadeAnim = useRef(new Animated.Value(1)).current;
+    const inputAnim = useRef(new Animated.Value(100)).current;
+    // const inputRange = [0, 100];
+    // const outputRange = ["0%", "100%"]
+    const [animatedWidth, setAnimatedWidth] = useState<DimensionValue | undefined>('100%');
+    // const animatedWidth = inputAnim.interpolate({inputRange, outputRange});
+    const [expanded, setExpanded] = useState<boolean>(true); 
+
+    const fadeIn = () => {
+      // Will change fadeAnim value to 1 in 5 seconds
+      // Animated.timing(fadeAnim, {
+      //   toValue: 1,
+      //   duration: 250,
+      //   useNativeDriver: true,
+      // }).start();
+      Animated.timing(inputAnim, {
+          toValue: 100,
+          duration: 250,
+          useNativeDriver: true
+      }).start();
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setExpanded(true);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setAnimatedWidth("100%");
+      console.log(expanded)
+    };
+  
+    const fadeOut = () => {
+      // Will change fadeAnim value to 0 in 3 seconds
+      // Animated.timing(fadeAnim, {
+      //   toValue: 0,
+      //   duration: 250,
+      //   useNativeDriver: true,
+      // }).start();
+      Animated.timing(inputAnim, {
+        toValue: 80,
+        duration: 250,
+        useNativeDriver: true
+    }).start();
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setExpanded(false);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+      setAnimatedWidth("80%");
+      console.log(expanded)
+    };
+
+    const headerStyle = StyleSheet.create({
+      textHeader: {
+        fontFamily: currentTheme.fontFamily.butler_stencil,
+        fontSize: currentTheme.fontSize.xxxl
+      },
+      searchContainer: {
+        width: '100%',
+        // height: 60,
+        paddingVertical: currentTheme.spacing.s,
+        backgroundColor: currentTheme.colors.background,
+        // justifyContent: 'center',
+        // alignItems: 'center',
+        zIndex: 100
+      },
+
+      inputContainer: {
+        // alignSelf: 'center',
+        // paddingVertical: 12,
+        backgroundColor: currentTheme.colors.primary,
+        width: '100%',
+        color: currentTheme.colors.foreground,
+        fontSize: currentTheme.fontSize.m,
+        height: 50,
+        fontWeight: 'bold',
+        borderRadius: currentTheme.spacing.s / 2,
+        paddingHorizontal: currentTheme.spacing.m,
+        // textAlign: 'left',
+        // textAlignVertical: 'center',
+      },
+
+      searchCategory: {
+        backgroundColor: currentTheme.colors.primary,
+        paddingHorizontal: currentTheme.spacing.m,
+        paddingVertical: currentTheme.spacing.s,
+        borderRadius: currentTheme.spacing.s,
+        marginTop: currentTheme.spacing.s,
+        opacity: 0.5
+      },
+  
+      highlightCategory: {
+        borderWidth: 1,
+        borderColor: currentTheme.colors.foreground,
+        paddingHorizontal: currentTheme.spacing.m - 1,
+        paddingVertical: currentTheme.spacing.s - 1,
+        opacity: 1
+        // backgroundColor: currentTheme.colors.background,
+      },
+  
+      searchCategoryText: {
+        fontWeight: '500',
+        fontSize: currentTheme.fontSize.xs
+      },
+
+    })
+
     return (
-      <View style={styles.searchContainer}>
-        <TextInput
-          // autoFocus={true}
-          style={styles.inputContainer}
-          textAlign='center'
-          textAlignVertical='center'
-          placeholder={`Search for ${field}...`}
-          inputMode='text'
-          maxLength={100}
-          selectTextOnFocus={true}
-          placeholderTextColor={currentTheme.colors.foreground}
-          defaultValue={String(searchInput)}
-          onSubmitEditing={(text) => handleText(text.nativeEvent.text)}
-        >
-        </TextInput>
-        <View style={{width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly'}}>
-          <TouchableOpacity 
-            style={[styles.searchCategory, field == 'artworks' ? styles.highlightCategory : {}]}
-            onPress={() => setField('artworks')}
+      <>
+        {expanded &&
+          <Animated.Text 
+            style={[headerStyle.textHeader, {opacity: fadeAnim}]}>Search</Animated.Text>
+        }
+        <View style={headerStyle.searchContainer}>
+          <TextInput
+            // autoFocus={true}
+            left={<TextInput.Icon icon="card-search-outline" color={currentTheme.colors.foreground} />}
+            onFocus={() => {
+              fadeOut(); 
+            }}
+            onBlur={() => {
+              fadeIn();
+            }}
+            style={[headerStyle.inputContainer, {width: animatedWidth}]}
+            textAlign='left'
+            textAlignVertical='center'
+            placeholder={`Search for ${field}...`}
+            inputMode='text'
+            maxLength={100}
+            selectTextOnFocus={true}
+            placeholderTextColor={currentTheme.colors.foreground}
+            defaultValue={String(searchInput)}
+            onSubmitEditing={(text) => handleText(text.nativeEvent.text)}
           >
-            <Text style={styles.searchCategoryText}>Artworks</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.searchCategory, field == 'artists' ? styles.highlightCategory : {}]}
-            onPress={() => setField('artists')}
-          >
-            <Text style={styles.searchCategoryText}>Agents</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.searchCategory, field == 'places' ? styles.highlightCategory : {}]}
-            onPress={() => setField('places')}
-          >
-            <Text style={styles.searchCategoryText}>Places</Text>
-          </TouchableOpacity>
+          </TextInput>
+          <View style={{width: animatedWidth, display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly'}}>
+            <TouchableOpacity 
+              style={[headerStyle.searchCategory, field == 'artworks' ? headerStyle.highlightCategory : {}]}
+              onPress={() => setField('artworks')}
+            >
+              <Text style={headerStyle.searchCategoryText}>Artworks</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[headerStyle.searchCategory, field == 'artists' ? headerStyle.highlightCategory : {}]}
+              onPress={() => setField('artists')}
+            >
+              <Text style={headerStyle.searchCategoryText}>Agents</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[headerStyle.searchCategory, field == 'places' ? headerStyle.highlightCategory : {}]}
+              onPress={() => setField('places')}
+            >
+              <Text style={headerStyle.searchCategoryText}>Places</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </>
     )
   }
 
@@ -278,7 +404,7 @@ const SearchScreen = () => {
       width: '100%',
       paddingHorizontal: currentTheme.spacing.page
     },
-    
+
     artworkTouchable: {
       
     },
@@ -328,49 +454,6 @@ const SearchScreen = () => {
         flex: 1,
         flexDirection: 'column',
         paddingBottom: 10,
-    },
-
-    searchContainer: {
-      width: '100%',
-      // height: 60,
-      paddingVertical: currentTheme.spacing.s,
-      backgroundColor: currentTheme.colors.background,
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 100
-    },
-
-    inputContainer: {
-      // alignSelf: 'center',
-      // paddingVertical: 12,
-      backgroundColor: currentTheme.colors.primary,
-      width: '100%',
-      color: currentTheme.colors.foreground,
-      fontWeight: 'bold',
-      borderRadius: currentTheme.spacing.s
-    },
-
-    searchCategory: {
-      backgroundColor: currentTheme.colors.primary,
-      paddingHorizontal: currentTheme.spacing.m,
-      paddingVertical: currentTheme.spacing.s,
-      borderRadius: currentTheme.spacing.s,
-      marginTop: currentTheme.spacing.s,
-      opacity: 0.5
-    },
-
-    highlightCategory: {
-      borderWidth: 1,
-      borderColor: currentTheme.colors.foreground,
-      paddingHorizontal: currentTheme.spacing.m - 1,
-      paddingVertical: currentTheme.spacing.s - 1,
-      opacity: 1
-      // backgroundColor: currentTheme.colors.background,
-    },
-
-    searchCategoryText: {
-      fontWeight: '500',
-      fontSize: currentTheme.fontSize.xs
     },
 
     gradient: {
@@ -518,6 +601,13 @@ const SearchScreen = () => {
               size={32}
             />
           </View>
+          :
+          <></>
+        }
+        {(searchInput == '') ? 
+          <ScrollView>
+
+          </ScrollView>
           :
           <></>
         }
