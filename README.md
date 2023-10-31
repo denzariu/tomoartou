@@ -2,4 +2,4 @@
 Which uses the [Art Institute of Chicago API](https://api.artic.edu/).
 
 ### A few screenshots:
-![Frame 2](https://github.com/denzariu/tomoartou/assets/40743579/ba621fe5-43d1-4d42-98d5-04e66c259fd4)
+![Frame 2](https://github.com/denzariu/tomoartou/assets/40743579/e8377a5d-4625-450b-a830-e1d5a1b902d2)
