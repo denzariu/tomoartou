@@ -204,7 +204,7 @@ const SearchScreen = () => {
   }, [currentPage])
   
   const loadMoreArtworks = () => {    
-    if (!loading && fetching != 'loading' && !changingInput && maxPages > currentPage) {
+    if (!loading && fetching != 'loading' && !changingInput && maxPages > currentPage && searchInput != '') {
       setLoading(true)
       setCurrentPage((currentValue) => {return (currentValue + 1)});
     }
@@ -251,11 +251,10 @@ const SearchScreen = () => {
           duration: 250,
           useNativeDriver: true
       }).start();
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      LayoutAnimation.configureNext(LayoutAnimation.create(200, 'easeInEaseOut', 'opacity'));
       setExpanded(true);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      LayoutAnimation.configureNext(LayoutAnimation.create(200, 'easeInEaseOut', 'opacity'));
       setAnimatedSearch({width: '100%', backgroundColor: currentTheme.colors.primary});
-      console.log(expanded)
     };
   
     const fadeOut = () => {
@@ -265,7 +264,7 @@ const SearchScreen = () => {
         useNativeDriver: true
     }).start();
       
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      LayoutAnimation.configureNext(LayoutAnimation.create(200, 'easeInEaseOut', 'opacity'));
       setAnimatedSearch({
         width: '80%',
         backgroundColor: currentTheme.colors.background,
@@ -273,10 +272,8 @@ const SearchScreen = () => {
         borderWidth: currentTheme.spacing.xs / 4,
         height: 35
       })
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      LayoutAnimation.configureNext(LayoutAnimation.create(200, 'easeInEaseOut', 'opacity'));
       setExpanded(false);
-
-      console.log(expanded)
     };
 
     const headerStyle = StyleSheet.create({
@@ -294,7 +291,7 @@ const SearchScreen = () => {
       inputContainer: {
         backgroundColor: currentTheme.colors.primary,
         width: '100%',
-        color: currentTheme.colors.foreground,
+        // color: currentTheme.colors.foreground,
         fontSize: currentTheme.fontSize.m,
         height: 50,
         fontWeight: 'bold',
@@ -320,6 +317,18 @@ const SearchScreen = () => {
         marginTop: currentTheme.spacing.s,
         opacity: 0.5
       },
+
+      searchCategoryS: {
+        backgroundColor: currentTheme.colors.primary,
+        paddingHorizontal: currentTheme.spacing.s,
+        paddingVertical: currentTheme.spacing.xs / 2,
+        borderRadius: currentTheme.spacing.s,
+        marginVertical: currentTheme.spacing.s,
+        marginLeft: currentTheme.spacing.m,
+        alignContent: 'center',
+        justifyContent: 'center',
+        opacity: 0.5
+      },
   
       highlightCategory: {
         borderWidth: 1,
@@ -339,13 +348,37 @@ const SearchScreen = () => {
     return (
       <>
         {expanded &&
-          <Animated.Text 
-            style={[headerStyle.textHeader, {opacity: fadeAnim}]}>Search</Animated.Text>
+          <View style={{flexDirection: 'row'}}>
+            <Animated.Text 
+              style={[headerStyle.textHeader, {opacity: fadeAnim}]}>Search</Animated.Text>
+            
+            <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-around', flex: 1}}>
+              <TouchableOpacity 
+                style={[headerStyle.searchCategoryS, field == 'artworks' ? headerStyle.highlightCategory : {}]}
+                onPress={() => setField('artworks')}
+              >
+                <Text style={headerStyle.searchCategoryText}>Artworks</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[headerStyle.searchCategoryS, field == 'artists' ? headerStyle.highlightCategory : {}]}
+                onPress={() => setField('artists')}
+              >
+                <Text style={headerStyle.searchCategoryText}>Agents</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[headerStyle.searchCategoryS, field == 'places' ? headerStyle.highlightCategory : {}]}
+                onPress={() => setField('places')}
+              >
+                <Text style={headerStyle.searchCategoryText}>Places</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          
         }
         <View style={headerStyle.searchContainer}>
           <View style={{flexDirection: 'row'}}>
             <TextInput
-              left={<TextInput.Icon icon="card-search-outline" color={currentTheme.colors.foreground} />}
+              left={<TextInput.Icon disabled={true} icon="card-search-outline" color={currentTheme.colors.foreground} />}
               onFocus={() => {
                 fadeOut(); 
               }}
@@ -359,7 +392,9 @@ const SearchScreen = () => {
               inputMode='text'
               maxLength={100}
               selectTextOnFocus={true}
-              placeholderTextColor={currentTheme.colors.foreground}
+              // placeholderTextColor={currentTheme.colors.foreground}
+              selectionColor={currentTheme.colors.primary}
+              cursorColor={currentTheme.colors.foreground}
               defaultValue={String(searchInput)}
               onSubmitEditing={(text) => {handleText(text.nativeEvent.text), fadeIn(), Keyboard.dismiss()}}
             >
@@ -374,7 +409,7 @@ const SearchScreen = () => {
             }
           </View>
           {!expanded &&
-          <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly'}}>
+          <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '80%'}}>
             <TouchableOpacity 
               style={[headerStyle.searchCategory, field == 'artworks' ? headerStyle.highlightCategory : {}]}
               onPress={() => setField('artworks')}
@@ -561,6 +596,7 @@ const SearchScreen = () => {
       </TouchableOpacity>:<></>
     )
   }
+  console.log({l: loading, f: fetching})
 
   return (
     // <SafeAreaView style={styles.page}>
@@ -609,6 +645,15 @@ const SearchScreen = () => {
             )}
           />
         </ScrollView>
+
+        {(searchInput == '') ? 
+          <ScrollView>
+            {/* ADD USER-DEFINED CATEGORIES */}
+          </ScrollView>
+          :
+          <></>
+        }
+
         {(loading || fetching == 'loading') ? 
           <View style={styles.loadingView}>
             <ActivityIndicator 
@@ -621,13 +666,8 @@ const SearchScreen = () => {
           :
           <></>
         }
-        {(searchInput == '') ? 
-          <ScrollView>
-
-          </ScrollView>
-          :
-          <></>
-        }
+        
+        
         {(maxPages <= currentPage && maxPages != maxPagesLim) ? 
           <View style={{flex: 1}}>
             <Text style={styles.textNoMoreArtworks}>You've reached the end</Text>
