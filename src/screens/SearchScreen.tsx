@@ -18,6 +18,9 @@ if (
 
 type categories = 'artworks' | 'artists' | 'places' | undefined
 type fetchStatus = 'success' | 'error' | 'unknown' | 'loading'
+const maxPagesLim = 99999999;
+const ProximityForLoadingItems = 600;
+const LOADING_LIMIT = 20;
 
 const SearchScreen = () => {
   
@@ -32,8 +35,7 @@ const SearchScreen = () => {
   const [searchInput, setSearchInput] = useState<string | number | boolean>('');
 
   const [currentPage, setCurrentPage] = useState<number>(1)
-  const [maxPages, setMaxPages] = useState<number>(99999999)
-  // const [artworksData, setArtworksData] = useState<any | undefined>([])
+  const [maxPages, setMaxPages] = useState<number>(maxPagesLim)
   const [artworks, setArtworks] = useState<any | undefined>([])
 
   const [modalOpen, setModalOpen] = useState<any>()
@@ -45,20 +47,18 @@ const SearchScreen = () => {
   const iiif_url = 'https://www.artic.edu/iiif/2/';
   const size_url = '/full/400,/0/default.jpg';
 
-  const LIMIT = 16;
-  const OFFSET = 68;
   const BOTTOM_TAB_OFFSET: number = 0 //useBottomTabBarHeight()
 
   const loadArtworks = () => {
-    const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title`
+    const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&limit=${LOADING_LIMIT}&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title`
       
     console.log("searching for ", searchInput)
     fetch(url)
     .then(response => response.json())
     .then(json => {
       setMaxPages(json.pagination.total_pages)
-
       setFetching('success')
+
       console.log("This will add: ", json.data.length, " artworks")
       if (json.data.length <= 0) {
         setLoading(false)
@@ -69,7 +69,7 @@ const SearchScreen = () => {
       let S2: number = heightRow2
 
       json.data = json.data.map( (item: any) => {
-        if (item?.thumbnail) {
+        if (item?.thumbnail && item.thumbnail.width && item.thumbnail.height) {
           if (S1 <= S2) {
             item.row = 0
             S1 += item.thumbnail?.height / item.thumbnail?.width
@@ -79,13 +79,14 @@ const SearchScreen = () => {
             S2 += item.thumbnail?.height / item.thumbnail?.width
           }
         }
+        else item.row = 2
+
         item.title = item.title.replace('(', "\n(")
         if (item.description)
           item.description = item.description.replace(/<[^>]*>/g, '').replaceAll("&quot;", '"').replaceAll("\n", "\n\n")
         return item
       })
 
-      console.log(json.data)
       console.log("After:", {row1: S1, row2: S2})
 
       if (S1 > 50 && S2 > 50)
@@ -105,14 +106,14 @@ const SearchScreen = () => {
   }
 
   const loadArtists = () => {
-    const url = `https://api.artic.edu/api/v1/agents/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&fields=id,title,description`
+    const url = `https://api.artic.edu/api/v1/agents/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&limit=${LOADING_LIMIT}&fields=id,title,description`
         
+    console.log({url:url})
     fetch(url)
     .then(response => response.json())
     .then(json => {
 
       setMaxPages(json.pagination.total_pages)
-
       setFetching('success')
 
       console.log("This will add: ", json.data.length, " artists")
@@ -141,7 +142,7 @@ const SearchScreen = () => {
   }
 
   const loadPlaces = () => {
-    const url = `https://api.artic.edu/api/v1/places/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}`
+    const url = `https://api.artic.edu/api/v1/places/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&limit=${LOADING_LIMIT}`
     //&fields=id,title,description`
         
     fetch(url)
@@ -152,12 +153,12 @@ const SearchScreen = () => {
 
       setFetching('success')
 
-      console.log("This will add: ", json.data.length, " artists")
+      console.log("This will add: ", json.data.length, " places")
       if (json.data.length <= 0) {
         setLoading(false)
         return
       }
-
+      
       json.data = json.data.map( (item: any) => {
         item.title = item.title.replace('(', "\n(")
         if (item.description)
@@ -205,13 +206,12 @@ const SearchScreen = () => {
   const loadMoreArtworks = () => {    
     if (!loading && fetching != 'loading' && !changingInput && maxPages > currentPage) {
       setLoading(true)
-      const currentPageCopy = currentPage; //This is necessary in order to trigger an update
-      setCurrentPage(currentPageCopy + 1);
+      setCurrentPage((currentValue) => {return (currentValue + 1)});
     }
   }
   
   const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}: NativeScrollEvent) => {
-    const paddingToBottom = 260; // Proximity to bottom, triggering event
+    const paddingToBottom = ProximityForLoadingItems; // Proximity to bottom, triggering event
     return layoutMeasurement.height + contentOffset.y >=
       contentSize.height - paddingToBottom;
   };
@@ -221,36 +221,31 @@ const SearchScreen = () => {
   } 
 
   useEffect(() => {
-    setChangingInput(() => {return true})
-    setCurrentPage(() => {return 0})
-    setArtworks([])
-    setChangingInput(() => {return false})
-    
-    loadMoreArtworks()
+    console.log({si: searchInput, fi: field})
+    if (searchInput == '') return;
+  
+    setChangingInput(true)
   }, [searchInput, field])
 
-  
+  useEffect(() => {
+    if (changingInput) {
+      setArtworks(() => [])
+      setMaxPages(maxPagesLim)
+      setCurrentPage(0)
+      setChangingInput(false)
+    }
+    else 
+      loadMoreArtworks()
+  }, [changingInput])
   
   const SearchHeader = () => {
     const fadeAnim = useRef(new Animated.Value(1)).current;
     const inputAnim = useRef(new Animated.Value(100)).current;
-    // const inputRange = [0, 100];
-    // const outputRange = ["0%", "100%"]
-    const [animatedWidth, setAnimatedWidth] = useState<DimensionValue | undefined>('100%');
-    const [animatedSearch, setAnimatedSearch] = useState<Object>({
-      width: '100%',
-      backgroundColor: currentTheme.colors.primary
-    });
+    const [animatedSearch, setAnimatedSearch] = useState<Object>({});
     // const animatedWidth = inputAnim.interpolate({inputRange, outputRange});
     const [expanded, setExpanded] = useState<boolean>(true); 
 
     const fadeIn = () => {
-      // Will change fadeAnim value to 1 in 5 seconds
-      // Animated.timing(fadeAnim, {
-      //   toValue: 1,
-      //   duration: 250,
-      //   useNativeDriver: true,
-      // }).start();
       Animated.timing(inputAnim, {
           toValue: 100,
           duration: 250,
@@ -264,12 +259,6 @@ const SearchScreen = () => {
     };
   
     const fadeOut = () => {
-      // Will change fadeAnim value to 0 in 3 seconds
-      // Animated.timing(fadeAnim, {
-      //   toValue: 0,
-      //   duration: 250,
-      //   useNativeDriver: true,
-      // }).start();
       Animated.timing(inputAnim, {
         toValue: 80,
         duration: 250,
@@ -297,17 +286,12 @@ const SearchScreen = () => {
       },
       searchContainer: {
         width: '100%',
-        // height: 60,
         paddingVertical: currentTheme.spacing.s,
         backgroundColor: currentTheme.colors.background,
-        // justifyContent: 'center',
-        // alignItems: 'center',
         zIndex: 100
       },
 
       inputContainer: {
-        // alignSelf: 'center',
-        // paddingVertical: 12,
         backgroundColor: currentTheme.colors.primary,
         width: '100%',
         color: currentTheme.colors.foreground,
@@ -316,12 +300,9 @@ const SearchScreen = () => {
         fontWeight: 'bold',
         borderRadius: currentTheme.spacing.s / 2,
         paddingHorizontal: currentTheme.spacing.m,
-        // textAlign: 'left',
-        // textAlignVertical: 'center',
       },
 
       cancelInput: {
-        // backgroundColor: currentTheme.colors.primary,
         width: '100%',
         color: currentTheme.colors.foreground,
         fontSize: currentTheme.fontSize.m,
@@ -346,7 +327,6 @@ const SearchScreen = () => {
         paddingHorizontal: currentTheme.spacing.m - 1,
         paddingVertical: currentTheme.spacing.s - 1,
         opacity: 1
-        // backgroundColor: currentTheme.colors.background,
       },
   
       searchCategoryText: {
@@ -365,7 +345,6 @@ const SearchScreen = () => {
         <View style={headerStyle.searchContainer}>
           <View style={{flexDirection: 'row'}}>
             <TextInput
-              // autoFocus={true}
               left={<TextInput.Icon icon="card-search-outline" color={currentTheme.colors.foreground} />}
               onFocus={() => {
                 fadeOut(); 
@@ -522,7 +501,7 @@ const SearchScreen = () => {
 
   const Artwork = (item: any, row: number) => {
     return (
-      (item.row == row && item && (item.image_id && item.thumbnail && item.thumbnail.height > 0)) ?
+      (item.row % 2 == row) ?
       <TouchableOpacity 
         style={styles.artworkTouchable} 
         onPress={() => {handleArtworkOpenPress(item)}}
@@ -537,7 +516,7 @@ const SearchScreen = () => {
 
   const Artist = (item: any, index: number, row: number) => {
     return (
-      (index % 2 == row && item) ?
+      (index % 2 == row) ?
       <TouchableOpacity 
         style={[styles.artworkTouchable, {marginBottom: -currentTheme.spacing.xxl, padding: currentTheme.spacing.xs}]} 
         onPress={() => {handleArtworkOpenPress(item)}}
@@ -549,13 +528,11 @@ const SearchScreen = () => {
         /> 
         <LinearGradient
           style={styles.gradient}
-          // locations={[0, 0.9]}
           colors={[currentTheme.colors.background+'00', currentTheme.colors.background]}
         >
           <Text
             numberOfLines={1}
-            style={styles.artistText}>{item?.title}
-          </Text>
+            style={styles.artistText}>{item.title}</Text>
         </LinearGradient>
       </TouchableOpacity>:<></>
     )
@@ -563,19 +540,24 @@ const SearchScreen = () => {
 
   const Place = (item: any, index: number, row: number) => {
     return (
-      (index % 2 == row && item) ?
+      (index % 2 == row) ?
       <TouchableOpacity 
-        style={[styles.artworkTouchable, {padding: currentTheme.spacing.xs}]} 
+        style={[styles.artworkTouchable, {marginBottom: -currentTheme.spacing.xxl, padding: currentTheme.spacing.xs}]} 
         onPress={() => {handleArtworkOpenPress(item)}}
         activeOpacity={0.9}
       >
         <Image 
           source={{uri: 'https://pyxis.nymag.com/v1/imgs/2cb/2e1/47a72da70b3f7a301273b06cac9ea615c8-06-bob-ross-painting.rsquare.w400.jpg'}} 
-          style={{width: '100%', aspectRatio: 0.85, borderRadius: currentTheme.spacing.s}} 
+          style={styles.artistTouchable} 
         /> 
-        <Text 
-          numberOfLines={1}
-          style={styles.artistText}>{item?.title}</Text>
+        <LinearGradient
+          style={styles.gradient}
+          colors={[currentTheme.colors.background+'00', currentTheme.colors.background]}
+        >
+          <Text 
+            numberOfLines={1}
+            style={styles.artistText}>{item.title}</Text>
+        </LinearGradient>
       </TouchableOpacity>:<></>
     )
   }
@@ -609,7 +591,7 @@ const SearchScreen = () => {
             renderItem={({ item, index }) => (
                 field == 'artworks' ? Artwork(item, 0) :
                 field == 'artists' ? Artist(item, index, 0) : 
-                field == 'places' ? Place(item, index, 1) : <></> 
+                field == 'places' ? Place(item, index, 0) : <></> 
             )}
           />
           <FlatList
@@ -646,7 +628,7 @@ const SearchScreen = () => {
           :
           <></>
         }
-        {(maxPages <= currentPage && maxPages != 99999999) ? 
+        {(maxPages <= currentPage && maxPages != maxPagesLim) ? 
           <View style={{flex: 1}}>
             <Text style={styles.textNoMoreArtworks}>You've reached the end</Text>
             <Text style={[styles.textNoMoreArtworks, styles.rotate90]}>:)</Text>
