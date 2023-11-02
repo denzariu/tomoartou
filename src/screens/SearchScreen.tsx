@@ -7,6 +7,7 @@ import { DarkTheme, Theme } from '../defaults/ui';
 import ModalArtwork from '../components/ModalArtwork';
 import LinearGradient from 'react-native-linear-gradient';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Keyboard } from 'react-native';
 
 if (
   Platform.OS === 'android' &&
@@ -236,6 +237,10 @@ const SearchScreen = () => {
     // const inputRange = [0, 100];
     // const outputRange = ["0%", "100%"]
     const [animatedWidth, setAnimatedWidth] = useState<DimensionValue | undefined>('100%');
+    const [animatedSearch, setAnimatedSearch] = useState<Object>({
+      width: '100%',
+      backgroundColor: currentTheme.colors.primary
+    });
     // const animatedWidth = inputAnim.interpolate({inputRange, outputRange});
     const [expanded, setExpanded] = useState<boolean>(true); 
 
@@ -254,7 +259,7 @@ const SearchScreen = () => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setExpanded(true);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setAnimatedWidth("100%");
+      setAnimatedSearch({width: '100%', backgroundColor: currentTheme.colors.primary});
       console.log(expanded)
     };
   
@@ -270,11 +275,18 @@ const SearchScreen = () => {
         duration: 250,
         useNativeDriver: true
     }).start();
+      
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setAnimatedSearch({
+        width: '80%',
+        backgroundColor: currentTheme.colors.background,
+        borderColor:  currentTheme.colors.foreground,
+        borderWidth: currentTheme.spacing.xs / 4,
+        height: 35
+      })
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setExpanded(false);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
-      setAnimatedWidth("80%");
       console.log(expanded)
     };
 
@@ -306,6 +318,17 @@ const SearchScreen = () => {
         paddingHorizontal: currentTheme.spacing.m,
         // textAlign: 'left',
         // textAlignVertical: 'center',
+      },
+
+      cancelInput: {
+        // backgroundColor: currentTheme.colors.primary,
+        width: '100%',
+        color: currentTheme.colors.foreground,
+        fontSize: currentTheme.fontSize.m,
+        flex: 1,
+        fontWeight: '500',
+        borderRadius: currentTheme.spacing.s / 2,
+        paddingHorizontal: currentTheme.spacing.m,
       },
 
       searchCategory: {
@@ -340,28 +363,39 @@ const SearchScreen = () => {
             style={[headerStyle.textHeader, {opacity: fadeAnim}]}>Search</Animated.Text>
         }
         <View style={headerStyle.searchContainer}>
-          <TextInput
-            // autoFocus={true}
-            left={<TextInput.Icon icon="card-search-outline" color={currentTheme.colors.foreground} />}
-            onFocus={() => {
-              fadeOut(); 
-            }}
-            onBlur={() => {
-              fadeIn();
-            }}
-            style={[headerStyle.inputContainer, {width: animatedWidth}]}
-            textAlign='left'
-            textAlignVertical='center'
-            placeholder={`Search for ${field}...`}
-            inputMode='text'
-            maxLength={100}
-            selectTextOnFocus={true}
-            placeholderTextColor={currentTheme.colors.foreground}
-            defaultValue={String(searchInput)}
-            onSubmitEditing={(text) => handleText(text.nativeEvent.text)}
-          >
-          </TextInput>
-          <View style={{width: animatedWidth, display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly'}}>
+          <View style={{flexDirection: 'row'}}>
+            <TextInput
+              // autoFocus={true}
+              left={<TextInput.Icon icon="card-search-outline" color={currentTheme.colors.foreground} />}
+              onFocus={() => {
+                fadeOut(); 
+              }}
+              onBlur={() => {
+                fadeIn();
+              }}
+              style={[headerStyle.inputContainer, animatedSearch]}
+              textAlign='left'
+              textAlignVertical='center'
+              placeholder={`Search for ${field}...`}
+              inputMode='text'
+              maxLength={100}
+              selectTextOnFocus={true}
+              placeholderTextColor={currentTheme.colors.foreground}
+              defaultValue={String(searchInput)}
+              onSubmitEditing={(text) => {handleText(text.nativeEvent.text), fadeIn(), Keyboard.dismiss()}}
+            >
+            </TextInput>
+            {!expanded &&
+              <TouchableOpacity 
+                // style={[headerStyle.searchCategory, field == 'artworks' ? headerStyle.highlightCategory : {}]}
+                onPress={() => {fadeIn(), Keyboard.dismiss()}}
+              >
+                <Animated.Text style={[headerStyle.cancelInput, {justifyContent: 'center', textAlignVertical: 'center', opacity: fadeAnim}]}>Cancel</Animated.Text>
+              </TouchableOpacity>
+            }
+          </View>
+          {!expanded &&
+          <View style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly'}}>
             <TouchableOpacity 
               style={[headerStyle.searchCategory, field == 'artworks' ? headerStyle.highlightCategory : {}]}
               onPress={() => setField('artworks')}
@@ -381,6 +415,7 @@ const SearchScreen = () => {
               <Text style={headerStyle.searchCategoryText}>Places</Text>
             </TouchableOpacity>
           </View>
+          }
         </View>
       </>
     )
