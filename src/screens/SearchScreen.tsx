@@ -16,16 +16,37 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-type categories = 'artworks' | 'artists' | 'places' | undefined
+type categories = 'artworks' | 'artists' | 'places' | undefined | 'artworksPhotographs'
 type fetchStatus = 'success' | 'error' | 'unknown' | 'loading'
 const maxPagesLim = 99999999;
 const ProximityForLoadingItems = 600;
 const LOADING_LIMIT = 20;
+const placeholderBobRoss = 'https://pyxis.nymag.com/v1/imgs/2cb/2e1/47a72da70b3f7a301273b06cac9ea615c8-06-bob-ross-painting.rsquare.w400.jpg';
+const JSONs = [
+  {
+    "query": {
+        "bool": {
+            "must": [{
+                    "term": {
+                        "classification_titles": "photograph"
+                    }
+                }
+            ]
+        }
+    }
+  },
+
+];
+  // const searchForPhotographs = 'https://api.artic.edu/api/v1/artworks/search?q=picasso&page=0&limit=20&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title&query[term][classification_title]=photograph'
+
 
 const SearchScreen = () => {
   
   const isDarkMode = useColorScheme() === 'dark';
   const currentTheme = isDarkMode ? DarkTheme : Theme;
+
+  const iiif_url = 'https://www.artic.edu/iiif/2/';
+  const size_url = '/full/400,/0/default.jpg';
 
   const [field, setField] = useState<categories>('artworks');
   
@@ -37,26 +58,36 @@ const SearchScreen = () => {
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [maxPages, setMaxPages] = useState<number>(maxPagesLim)
   const [artworks, setArtworks] = useState<any | undefined>([])
+  const [json, setJSON] = useState<any | undefined>(undefined)
 
-  const [modalOpen, setModalOpen] = useState<any>()
-  const [currentItem, setCurrentItem] = useState<any>()
+  if (searchInput == '' && field != 'artworks' && field != 'places' && field != 'artists')
+    setField('artworks')
+  
+  const [categoriesSpotlight, setCattegoriesSpotlight] = useState<any>([
+    {
+      title: "Vincent van Gogh", 
+      image: iiif_url + '26d3cea8-44c0-bfbd-a91a-19a007517152' + size_url, 
+      onPress: () => {}, 
+    },
+    {
+      title: "René Magritte", 
+      image: iiif_url + '767f4732-e9f2-3a46-c785-b2ee7109d3aa' + size_url,
+      onPress: () => {},
+    },
+    {
+      title: "Japanese",
+      image: iiif_url + 'b3974542-b9b4-7568-fc4b-966738f61d78' + size_url,
+      onPress: () => {setJSON(JSONs[0]), setField('artworksPhotographs'), setSearchInput('Looking at photographs...')}, 
+    },
+    {
+      title: "Photographs", 
+      image: iiif_url + '41f9a984-5c5b-bc7d-09d7-9b6fe0f348c9' + size_url,
+      onPress: () => {setJSON(JSONs[0]), setField('artworksPhotographs'), setSearchInput('Looking at photographs...')}, 
+    }
+  ])
 
-  const [heightRow1, setHeightRow1] = useState<number>(0)
-  const [heightRow2, setHeightRow2] = useState<number>(0)
-
-  const iiif_url = 'https://www.artic.edu/iiif/2/';
-  const size_url = '/full/400,/0/default.jpg';
-
-  const BOTTOM_TAB_OFFSET: number = 0 //useBottomTabBarHeight()
-
-  const loadArtworks = () => {
-    const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&limit=${LOADING_LIMIT}&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title`
-      
-    console.log("searching for ", searchInput)
-    fetch(url)
-    .then(response => response.json())
-    .then(json => {
-      setMaxPages(json.pagination.total_pages)
+  const parseJSON = (json: any) => {
+    setMaxPages(json.pagination.total_pages)
       setFetching('success')
 
       console.log("This will add: ", json.data.length, " artworks")
@@ -95,7 +126,48 @@ const SearchScreen = () => {
       setHeightRow1(S1)
       setHeightRow2(S2)
       setArtworks(artworks.concat(json.data))
+  }
+
+
+  
+  const loadCustomArtworks = (json: any) => {
+    const FIELDS = 'id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title,classification_titles'
+    const url = `https://api.artic.edu/api/v1/artworks/search/?fields=${FIELDS}&page=${currentPage}&limit=${LOADING_LIMIT/2}`
+    
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(json)
+    }).then(response => response.json())
+    .then(jsonFetched => { console.log(jsonFetched), parseJSON(jsonFetched) })
+    .catch(error => {
+      setFetching('error')
+      console.log('FETCHING ARTWORKS FAILED.', error)
+    }) 
+    .finally(() => {
+      setLoading(false)
     })
+  }
+
+  const [modalOpen, setModalOpen] = useState<any>()
+  const [currentItem, setCurrentItem] = useState<any>()
+
+  const [heightRow1, setHeightRow1] = useState<number>(0)
+  const [heightRow2, setHeightRow2] = useState<number>(0)
+
+
+  const BOTTOM_TAB_OFFSET: number = 0 //useBottomTabBarHeight()
+
+  const loadArtworks = () => {
+    const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&limit=${LOADING_LIMIT}&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title`
+      
+    console.log("searching for ", searchInput)
+    fetch(url)
+    .then(response => response.json())
+    .then(json => { parseJSON(json) })
     .catch(error => {
       setFetching('error')
       console.log('FETCHING ARTWORKS FAILED.', error)
@@ -184,6 +256,7 @@ const SearchScreen = () => {
       setLoading(true)
  
       switch (field) {
+        // General search categories
         case 'artworks': 
           loadArtworks()
           break
@@ -192,6 +265,10 @@ const SearchScreen = () => {
           break
         case 'places':
           loadPlaces()
+          break
+        // Custom search categories
+        case 'artworksPhotographs':
+          loadCustomArtworks(json)
           break
       }
     }
@@ -222,7 +299,10 @@ const SearchScreen = () => {
 
   useEffect(() => {
     console.log({si: searchInput, fi: field})
-    if (searchInput == '') return;
+    if (searchInput == '') {
+      setArtworks([])
+      return;
+    }
   
     setChangingInput(true)
   }, [searchInput, field])
@@ -388,7 +468,7 @@ const SearchScreen = () => {
               style={[headerStyle.inputContainer, animatedSearch]}
               textAlign='left'
               textAlignVertical='center'
-              placeholder={`Search for ${field}...`}
+              placeholder={field == 'artworks' || field == 'artists' || field == 'places' ? `Search for ${field}...` : 'What are you interested in?'}
               inputMode='text'
               maxLength={100}
               selectTextOnFocus={true}
@@ -536,14 +616,14 @@ const SearchScreen = () => {
 
   const Artwork = (item: any, row: number) => {
     return (
-      (item.row % 2 == row) ?
+      (item?.row % 2 == row) ?
       <TouchableOpacity 
         style={styles.artworkTouchable} 
         onPress={() => {handleArtworkOpenPress(item)}}
         activeOpacity={0.9}
       >
         <Image 
-          source={{uri: (iiif_url + item.image_id + size_url)}} style={[{width: '100%'}, item.thumbnail ? {aspectRatio: item.thumbnail.width / item.thumbnail.height} : {}]} 
+          source={{uri: (iiif_url + item?.image_id + size_url)}} style={[{width: '100%'}, (item?.thumbnail && item?.thumbnail.width && item?.thumbnail.height) ? {aspectRatio: item?.thumbnail?.width / item?.thumbnail?.height} : {}]} 
         /> 
       </TouchableOpacity>:<></>
     )
@@ -582,7 +662,7 @@ const SearchScreen = () => {
         activeOpacity={0.9}
       >
         <Image 
-          source={{uri: 'https://pyxis.nymag.com/v1/imgs/2cb/2e1/47a72da70b3f7a301273b06cac9ea615c8-06-bob-ross-painting.rsquare.w400.jpg'}} 
+          source={{uri: placeholderBobRoss}} 
           style={styles.artistTouchable} 
         /> 
         <LinearGradient
@@ -596,7 +676,29 @@ const SearchScreen = () => {
       </TouchableOpacity>:<></>
     )
   }
-  console.log({l: loading, f: fetching})
+
+  const PredefinedCategory = (item: any, index: number) => {
+    return (
+      <TouchableOpacity 
+        style={[{marginBottom: -currentTheme.spacing.xxl, padding: currentTheme.spacing.xs, flex: 1}]} 
+        onPress={item.onPress}
+        activeOpacity={0.9}
+      >
+        <Image 
+          source={{uri: item.image ? item.image : placeholderBobRoss}} 
+          style={styles.artistTouchable} 
+        /> 
+        <LinearGradient
+          style={styles.gradient}
+          colors={[currentTheme.colors.background+'00', currentTheme.colors.background]}
+        >
+          <Text
+            numberOfLines={1}
+            style={styles.artistText}>{item.title}</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    )
+  }
 
   return (
     // <SafeAreaView style={styles.page}>
@@ -625,7 +727,7 @@ const SearchScreen = () => {
             contentContainerStyle={styles.list}
             style={{height: '100%'}}
             renderItem={({ item, index }) => (
-                field == 'artworks' ? Artwork(item, 0) :
+                (field == 'artworks' || field == 'artworksPhotographs') ? Artwork(item, 0) :
                 field == 'artists' ? Artist(item, index, 0) : 
                 field == 'places' ? Place(item, index, 0) : <></> 
             )}
@@ -638,7 +740,7 @@ const SearchScreen = () => {
             contentContainerStyle={styles.list}
             style={{height: '100%'}}
             renderItem={({ item, index }) => (
-              field == 'artworks' ? Artwork(item, 1) :
+              (field == 'artworks' || field == 'artworksPhotographs') ? Artwork(item, 1) :
               field == 'artists' ? Artist(item, index, 1) : 
               field == 'places' ? Place(item, index, 1) : <></> 
             
@@ -647,9 +749,18 @@ const SearchScreen = () => {
         </ScrollView>
 
         {(searchInput == '') ? 
-          <ScrollView>
-            {/* ADD USER-DEFINED CATEGORIES */}
-          </ScrollView>
+          <FlatList
+            removeClippedSubviews={true}
+            keyExtractor={(item, index) => 3 + index.toString()}
+            scrollEnabled={true}
+            data={categoriesSpotlight}
+            numColumns={2}
+            contentContainerStyle={styles.list}
+            style={{height: '100%'}}
+            renderItem={({ item, index }) => (
+              PredefinedCategory(item, index)
+            )}
+          />
           :
           <></>
         }

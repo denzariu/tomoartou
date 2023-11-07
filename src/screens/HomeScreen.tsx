@@ -16,7 +16,7 @@ const HomeScreen = ({...props}) => {
   const [fetching, setFetching] = useState<boolean>(true)
   const [artworks, setArtworks] = useState<any | undefined>([])
   const [artworksIds, setArtworksIds] = useState<string>(
-    '24645,27992,27993,27991,26199,59924,25966,6565,16568,80607'
+    '24645,27992,27993,27991,26199,59924,25966,6565,16568,80607,47149,63234,102963,869'
   )
   const [artworkId, setArtworkId] = useState<string>('27991');
   // const [imageUrl, setImageUrl] = useState<string|undefined>(undefined)
@@ -156,6 +156,19 @@ const HomeScreen = ({...props}) => {
       backgroundColor: currentTheme.colors.background,
       borderRadius: 32
     },
+    textHeader: {
+      position: 'absolute',
+      top: 0,
+      // left: currentTheme.spacing.page,
+      // backgroundColor: currentTheme.colors.background,
+      paddingHorizontal: currentTheme.spacing.page,
+      zIndex: 10,
+      alignSelf: 'flex-start',
+      fontFamily: currentTheme.fontFamily.butler_stencil,
+      fontSize: currentTheme.fontSize.xxxl,
+      color: currentTheme.colors.foreground,
+      textShadowRadius: 32,
+    },
   })
 
 
@@ -168,6 +181,8 @@ const HomeScreen = ({...props}) => {
   return (
     
     <SafeAreaView style={styles.page}>
+      {/* <Text 
+              style={[styles.textHeader,]}>Tomartou</Text> */}
       <Carousel
         loop
         width={PAGE_WIDTH}
