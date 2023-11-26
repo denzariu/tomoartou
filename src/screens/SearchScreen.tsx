@@ -1,4 +1,4 @@
-import { ActivityIndicator, Animated, DimensionValue, Dimensions, FlatList, Image, LayoutAnimation, NativeScrollEvent, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View, useColorScheme } from 'react-native'
+import { ActivityIndicator, Alert, Animated, BackHandler, BackHandlerStatic, DimensionValue, Dimensions, FlatList, Image, LayoutAnimation, NativeEventSubscription, NativeScrollEvent, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View, useColorScheme } from 'react-native'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { TextInput } from 'react-native-paper';
 // import Animated from 'react-native-reanimated';
@@ -8,6 +8,7 @@ import ModalArtwork from '../components/ModalArtwork';
 import LinearGradient from 'react-native-linear-gradient';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Keyboard } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 if (
   Platform.OS === 'android' &&
@@ -17,7 +18,7 @@ if (
 }
 
 type categories = 'artworks' | 'artists' | 'places' | undefined | 'artworksPhotographs'
-type fetchStatus = 'success' | 'error' | 'unknown' | 'loading'
+type fetchStatus = 'success' | 'error' | 'unknown' | 'loading' | 'canceled'
 const maxPagesLim = 99999999;
 const ProximityForLoadingItems = 600;
 const LOADING_LIMIT = 20;
@@ -41,6 +42,9 @@ const JSONs = [
 
 
 const SearchScreen = () => {
+
+  const controller = new AbortController();
+  const [backHandler, setBackHandler] = useState<NativeEventSubscription>();
   
   const isDarkMode = useColorScheme() === 'dark';
   const currentTheme = isDarkMode ? DarkTheme : Theme;
@@ -52,6 +56,7 @@ const SearchScreen = () => {
   
   const [loading, setLoading] = useState<boolean>(false)
   const [fetching, setFetching] = useState<fetchStatus>('unknown')
+  const [ignoreResult, setIgnoreResult] = useState<boolean>(false)
   const [changingInput, setChangingInput] = useState<boolean>(true)
   const [searchInput, setSearchInput] = useState<string | number | boolean>('');
 
@@ -118,8 +123,6 @@ const SearchScreen = () => {
         return item
       })
 
-      console.log("After:", {row1: S1, row2: S2})
-
       if (S1 > 50 && S2 > 50)
         S1 -= 50, S2 -= 50
 
@@ -140,7 +143,8 @@ const SearchScreen = () => {
         Accept: 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(json)
+      body: JSON.stringify(json),
+      signal: controller.signal
     }).then(response => response.json())
     .then(jsonFetched => { console.log(jsonFetched), parseJSON(jsonFetched) })
     .catch(error => {
@@ -165,7 +169,7 @@ const SearchScreen = () => {
     const url = `https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&limit=${LOADING_LIMIT}&fields=id,title,image_id,thumbnail,artist_title,date_display,dimensions_detail,description,classification_title`
       
     console.log("searching for ", searchInput)
-    fetch(url)
+    fetch(url, {signal: controller.signal})
     .then(response => response.json())
     .then(json => { parseJSON(json) })
     .catch(error => {
@@ -181,7 +185,7 @@ const SearchScreen = () => {
     const url = `https://api.artic.edu/api/v1/agents/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&limit=${LOADING_LIMIT}&fields=id,title,description`
         
     console.log({url:url})
-    fetch(url)
+    fetch(url, {signal: controller.signal})
     .then(response => response.json())
     .then(json => {
 
@@ -217,7 +221,7 @@ const SearchScreen = () => {
     const url = `https://api.artic.edu/api/v1/places/search?q=${encodeURIComponent(searchInput)}&page=${currentPage}&limit=${LOADING_LIMIT}`
     //&fields=id,title,description`
         
-    fetch(url)
+    fetch(url, {signal: controller.signal})
     .then(response => response.json())
     .then(json => {
 
@@ -254,7 +258,7 @@ const SearchScreen = () => {
     if (searchInput != '') {
       setFetching('loading')
       setLoading(true)
- 
+      
       switch (field) {
         // General search categories
         case 'artworks': 
@@ -275,6 +279,45 @@ const SearchScreen = () => {
   }
 
   useEffect(() => {
+    
+
+    // Pop-up exit application
+    if (searchInput == '') {
+      const backAction = () => {
+        Alert.alert('Hold on!', 'Are you sure you want to go exit?', [
+          {
+            text: 'Cancel',
+            onPress: () => null,
+            style: 'cancel',
+          },
+          {text: 'YES', onPress: () => BackHandler.exitApp()},
+        ]);
+        return true;
+      };
+  
+      setBackHandler(BackHandler.addEventListener(
+        'hardwareBackPress',
+        backAction,
+      ))
+  
+    }
+    // Erase search input
+    else {
+      setBackHandler(BackHandler.addEventListener('hardwareBackPress', function () {
+        // Abort any ongoing fetch as the result of it is no longer relevant when changing input
+        controller.abort();
+        setIgnoreResult(true);
+        // if (field != 'artworks' && field != 'artists' && field != 'places') {
+          setSearchInput('');
+          return true;
+        // }
+        // return false;
+      }))
+    }
+    console.log(fetching)
+  }, [searchInput])
+
+  useEffect(() => {
     console.log({ maximum_pages: maxPages, current_page: currentPage, changing_input: changingInput })
     if (!changingInput)
       searchArtworks()
@@ -283,6 +326,7 @@ const SearchScreen = () => {
   const loadMoreArtworks = () => {    
     if (!loading && fetching != 'loading' && !changingInput && maxPages > currentPage && searchInput != '') {
       setLoading(true)
+      setIgnoreResult(false)
       setCurrentPage((currentValue) => {return (currentValue + 1)});
     }
   }
@@ -298,7 +342,7 @@ const SearchScreen = () => {
   } 
 
   useEffect(() => {
-    console.log({si: searchInput, fi: field})
+    console.log({si: searchInput, fi: field, fetching: fetching})
     if (searchInput == '') {
       setArtworks([])
       return;
@@ -468,7 +512,7 @@ const SearchScreen = () => {
               style={[headerStyle.inputContainer, animatedSearch]}
               textAlign='left'
               textAlignVertical='center'
-              placeholder={field == 'artworks' || field == 'artists' || field == 'places' ? `Search for ${field}...` : 'What are you interested in?'}
+              placeholder={(field == 'artworks' || field == 'artists' || field == 'places') ? `Search for ${field}...` : 'What are you interested in?'}
               inputMode='text'
               maxLength={100}
               selectTextOnFocus={true}
@@ -705,6 +749,7 @@ const SearchScreen = () => {
       <SafeAreaView style={styles.pageContainer}>
         <SearchHeader/>
         
+        {!ignoreResult && 
         <ScrollView 
           onScroll={({nativeEvent}) => {
             if (isCloseToBottom(nativeEvent)) {
@@ -747,6 +792,7 @@ const SearchScreen = () => {
             )}
           />
         </ScrollView>
+        }
 
         {(searchInput == '') ? 
           <FlatList
